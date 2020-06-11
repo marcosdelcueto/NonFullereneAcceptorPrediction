@@ -31,7 +31,7 @@ from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 #from rdkit.Chem import rdMolDescriptors
 #################################################################################
 ######## START CUSTOMIZABLE PARAMETERS ########
-input_file_name = 'inputMLPhotovoltaics.inp'  # name of input file
+input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
 # The rest of input options are inside the specified file
 ########  END CUSTOMIZABLE PARAMETERS  ########
 #################################################################################
@@ -338,7 +338,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -366,8 +366,32 @@ def preprocess_fn(X):
         X_fp_a.append(X[i][1])
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
-    xscaler = StandardScaler()
-    X_el = xscaler.fit_transform(X_el)
+    save_X_el = list(X_el[:])
+    #print('TEST before X_el')
+    #print(save_X_el)
+    for i in range(Ndata):
+        #X_el[i].pop(0)
+        #print('before caca X_el', X_el[i][0])
+        #print('before caca save_X_el', save_X_el[i][0])
+        X_el[i] = X_el[i][1:]
+        #del X_el[i][0]
+        #print('caca X_el', X_el[i])
+        #print('caca X_el', X_el[i][0])
+        #print('caca save_X_el', save_X_el[i][0])
+    xscaler = StandardScaler() ### croqueta uncomment me
+    X_el = xscaler.fit_transform(X_el) ### croqueta uncomment me
+    new_X_el = []
+    for i in range(Ndata):
+        new_list = []
+        new_list.append(save_X_el[i][0])
+        #print('number_elec_descrip',number_elec_descrip)
+        for j in range(5):
+            new_list.append(X_el[i][j])
+        new_X_el.append(new_list)
+    #save_X_el=np.concatenate(save_X_el).ravel()
+    X_el = list(new_X_el)
+    #print('TEST after X_el')
+    #print(X_el)
     X = np.c_[ X_el,X_fp_d,X_fp_a]
 
     return X
@@ -457,31 +481,62 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     y_real = []
     counter = 0
     progress_count = 1
-    # Cross-Validation
-    if CV=='kf':
-        kf = KFold(n_splits=kfold,shuffle=True)
-        validation=kf.split(X)
-    elif CV=='loo':
-        loo = LeaveOneOut()
-        validation=loo.split(X)
     kNN_distances = []
     kNN_error = []
-    for train_index, test_index in validation:
-        # Print progress
-        if CV=='loo':
-            if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
-            prog = (counter+1)*100/Ndata
-            if prog >= print_progress_every_x_percent*progress_count:
-                print('Progress %.0f%s' %(prog, '%'), flush=True)
-                progress_count = progress_count + 1
-        if CV=='kf':
-            print('Step',counter," / ", kfold,flush=True)
-        counter=counter+1
-        # assign train and test indeces
-        X_train,X_test=X[train_index],X[test_index]
-        y_train,y_test=y[train_index],y[test_index]
+    #################################################################
+    #################################################################
+    #################################################################
+    #print(X)
+    if CV == 'groups':
+        acceptor_group0 = [13,15,20,21,28,33]
+        acceptor_group1 = [1,8,9,12,16,18,19]
+        acceptor_group2 = [3,4,5,6]
+        acceptor_group3 = [2,4,6,10,11,29,30]
+        acceptor_group4 = [17,22,24,25,26,27]
+        acceptor_group5 = [23,31,32]
+        acceptor_group6 = [14,29,30]
+        acceptor_group7 = [7,17,26]
+        acceptor_group8 = [7,29,30]
+        # Select group here
+        acceptor_group = acceptor_group7
+        #print('X_newtest')
+        X_test = []
+        y_test = []
+        X_train = []
+        y_train = []
+        for i in range(len(X)):
+            if X[i][0] in acceptor_group:
+                #print('before:', i, X[i])
+                new_X = np.delete(X[i],0)
+                #print('test:',  i, new_X)
+                X_test.append(new_X)
+                y_test.append(y[i].tolist())
+                counter = counter+1
+            else:
+                new_X = np.delete(X[i],0)
+                #print('train:',  i, new_X)
+                X_train.append(new_X)
+                y_train.append(y[i])
+        for i in range(len(X_train)):
+            X_train[i] = X_train[i].tolist()
+            y_train[i] = y_train[i].tolist()
+        for i in range(len(X_test)):
+            X_test[i] = X_test[i].tolist()
+        #print('final type(X_train)', type(X_train))
+        #print('Total in group:', counter)
+        #print('Final X_train:')
+        #print(X_train)
+        #print(len(X_train))
+        #print('Final X_test:')
+        #print(X_test)
+        #print(len(X_test))
+        #print('Final y_train:')
+        #print(y_train)
+        #print(len(y_train))
         # predict y values
-        y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+        #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+        y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+        #print('test y_pred', y_pred)
         # if kNN: calculate lists with kNN_distances and kNN_error
         if ML=='kNN':
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
@@ -492,8 +547,72 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             kNN_error.append(error)
         # add predicted values in this LOO to list with total
         y_predicted.append(y_pred.tolist())
-        y_real.append(y_test.tolist())
+        #y_predicted.append(y_pred)
+        y_real.append(y_test)
         #print('TEST', y_test.tolist(),y_pred.tolist())
+        #sys.exit()
+        #print('y_real:')
+        #print(y_real)
+        y_predicted = [item for dummy in y_predicted for item in dummy ]
+        #print('y_predicted:')
+        #print(y_predicted)
+    #################################################################
+    #################################################################
+    #################################################################
+    elif CV == 'kf' or CV == 'loo':
+        # Cross-Validation
+        if CV=='kf':
+            kf = KFold(n_splits=kfold,shuffle=True)
+            validation=kf.split(X)
+        elif CV=='loo':
+            loo = LeaveOneOut()
+            validation=loo.split(X)
+        for train_index, test_index in validation:
+            #print('train:')
+            #print(train_index)
+            #print('test:')
+            #print(test_index)
+            # Print progress
+            if CV=='loo':
+                if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
+                prog = (counter+1)*100/Ndata
+                if prog >= print_progress_every_x_percent*progress_count:
+                    print('Progress %.0f%s' %(prog, '%'), flush=True)
+                    progress_count = progress_count + 1
+            if CV=='kf':
+                print('Step',counter," / ", kfold,flush=True)
+            counter=counter+1
+            # assign train and test indeces
+            X_train,X_test=X[train_index],X[test_index]
+            y_train,y_test=y[train_index],y[test_index]
+            #print('Final X_train:')
+            #print(X_train)
+            #print(len(X_train))
+            #print('Final X_test:')
+            #print(X_test)
+            #print(len(X_test))
+            #print('Final y_train:')
+            #print(y_train)
+            #print(len(y_train))
+            # predict y values
+            y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+            #print('test y_pred', y_pred)
+            # if kNN: calculate lists with kNN_distances and kNN_error
+            if ML=='kNN':
+                provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+                for i in range(len(provi_kNN_dist[0])):
+                    kNN_dist=np.mean(provi_kNN_dist[0][i])
+                    kNN_distances.append(kNN_dist)
+                error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+                kNN_error.append(error)
+            # add predicted values in this LOO to list with total
+            y_predicted.append(y_pred.tolist())
+            y_real.append(y_test.tolist())
+            #print('TEST', y_test.tolist(),y_pred.tolist())
+            #print('y_real:')
+            #print(y_real)
+            #print('y_predicted:')
+            #print(y_predicted)
     # Put results in a 1D list
     y_real_list=[]
     y_predicted_list=[]
@@ -884,7 +1003,7 @@ def plot_scatter(x, y, plot_type, plot_name):
 ### Run main program ###
 start = time()
 # Read input values
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent) = read_initial_values(input_file_name)
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
