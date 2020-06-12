@@ -367,31 +367,21 @@ def preprocess_fn(X):
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
     save_X_el = list(X_el[:])
-    #print('TEST before X_el')
-    #print(save_X_el)
-    for i in range(Ndata):
-        #X_el[i].pop(0)
-        #print('before caca X_el', X_el[i][0])
-        #print('before caca save_X_el', save_X_el[i][0])
-        X_el[i] = X_el[i][1:]
-        #del X_el[i][0]
-        #print('caca X_el', X_el[i])
-        #print('caca X_el', X_el[i][0])
-        #print('caca save_X_el', save_X_el[i][0])
     xscaler = StandardScaler() ### croqueta uncomment me
-    X_el = xscaler.fit_transform(X_el) ### croqueta uncomment me
-    new_X_el = []
-    for i in range(Ndata):
-        new_list = []
-        new_list.append(save_X_el[i][0])
-        #print('number_elec_descrip',number_elec_descrip)
-        for j in range(5):
-            new_list.append(X_el[i][j])
-        new_X_el.append(new_list)
-    #save_X_el=np.concatenate(save_X_el).ravel()
-    X_el = list(new_X_el)
-    #print('TEST after X_el')
-    #print(X_el)
+    if CV == 'groups':
+        for i in range(Ndata):
+            X_el[i] = X_el[i][1:]
+        X_el = xscaler.fit_transform(X_el) ### croqueta uncomment me
+        new_X_el = []
+        for i in range(Ndata):
+            new_list = []
+            new_list.append(save_X_el[i][0])
+            for j in range(5):
+                new_list.append(X_el[i][j])
+            new_X_el.append(new_list)
+        X_el = list(new_X_el)
+    else:
+        X_el = xscaler.fit_transform(X_el)
     X = np.c_[ X_el,X_fp_d,X_fp_a]
 
     return X
@@ -488,6 +478,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #################################################################
     #print(X)
     if CV == 'groups':
+        # Define groups (NEEDS TO BE EDITTED)
         acceptor_group0 = [13,15,20,21,28,33]
         acceptor_group1 = [1,8,9,12,16,18,19]
         acceptor_group2 = [3,4,5,6]
@@ -497,7 +488,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         acceptor_group6 = [14,29,30]
         acceptor_group7 = [7,17,26]
         acceptor_group8 = [7,29,30]
-        # Select group here
+        # Select which group will be used as test set (NEEDS TO BE EDITTED)
         acceptor_group = acceptor_group7
         #print('X_newtest')
         X_test = []
