@@ -25,8 +25,8 @@ print_progress_every_x_percent =  10  # print progress in standard output at dif
 db_file = 'database.csv'              # name of input file with database
 Ndata =  566                          # number of d/a pairs
 xcols_struc = ["SMILES-DFP","SMILES-AFP"]                    # name of descriptors that will be affected by gamma_d and gamma_a, respectively
-#xcols_elec0 = ["ACCEPTORNo","HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
-xcols_elec0 = ["HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
+xcols_elec0 = ["ACCEPTORNo","HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
+#xcols_elec0 = ["HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
 #xcols_elec1 = ["sum of f-D", "sum of f-A"]                  # name of descriptors affected by gamma_el[1]
 #xcols_elec2 = ["XLOGP3-D","XLOGP3-A"]                       # name of descriptors affected by gamma_el[2]
 ycols = [ "PCE" ]               	     # name of target property
@@ -35,7 +35,7 @@ FP_length = 2048						     # number of entries of each fingerprint
 # Machine Learning Algorithm options ##
 #######################################
 ML = 'kNN'                            # 'kNN' or 'KRR' or 'SVR'
-CV = 'loo'                         # select 'loo' or 'kf' or 'groups'
+CV = 'groups'                         # select 'loo' or 'kf' or 'groups'
 kfold = 2                             # only used uf CV=kf
 plot_target_predictions = None # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
 ### General hyperparameters ###########

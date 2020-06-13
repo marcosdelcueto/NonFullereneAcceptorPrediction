@@ -367,16 +367,19 @@ def preprocess_fn(X):
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
     save_X_el = list(X_el[:])
-    xscaler = StandardScaler() ### croqueta uncomment me
+    xscaler = StandardScaler()
     if CV == 'groups':
         for i in range(Ndata):
             X_el[i] = X_el[i][1:]
-        X_el = xscaler.fit_transform(X_el) ### croqueta uncomment me
+        X_el = xscaler.fit_transform(X_el)
         new_X_el = []
+        total_elec_descrip = 0
+        for j in range(len(elec_descrip)):
+            total_elec_descrip = total_elec_descrip + elec_descrip[j]
         for i in range(Ndata):
             new_list = []
             new_list.append(save_X_el[i][0])
-            for j in range(5):
+            for j in range(total_elec_descrip-1):
                 new_list.append(X_el[i][j])
             new_X_el.append(new_list)
         X_el = list(new_X_el)
