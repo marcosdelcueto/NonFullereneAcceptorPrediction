@@ -31,7 +31,7 @@ from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 #from rdkit.Chem import rdMolDescriptors
 #################################################################################
 ######## START CUSTOMIZABLE PARAMETERS ########
-input_file_name = 'inputNovelNonFullereneAcceptors.inp'  # name of input file
+input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
 # The rest of input options are inside the specified file
 ########  END CUSTOMIZABLE PARAMETERS  ########
 #################################################################################
