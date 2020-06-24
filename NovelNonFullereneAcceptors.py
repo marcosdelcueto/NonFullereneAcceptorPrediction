@@ -31,10 +31,11 @@ from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 #from rdkit.Chem import rdMolDescriptors
 #################################################################################
 ######## START CUSTOMIZABLE PARAMETERS ########
-input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
+input_file_name = 'inputNovelNonFullereneAcceptors.inp'  # name of input file
 # The rest of input options are inside the specified file
 ########  END CUSTOMIZABLE PARAMETERS  ########
 #################################################################################
+
 
 #################################################################################
 ###### START MAIN ######
@@ -128,17 +129,71 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
         print('This may take several minutes')
         print('######################################')
         # Set differential evolution parameters
-        mini_args = (X, y, condition,fixed_hyperparams)
-        solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
-        # print best hyperparams
-        best_hyperparams = solver.x
-        best_rmse = solver.fun
-        print('Best hyperparameters:', best_hyperparams,flush=True)
-        print('Best rmse:', best_rmse,flush=True)
-        if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(best_hyperparams)))
-        if print_log==True: f_out.write('Best rmse: %s \n' %(str(best_rmse)))
-        if print_log==True: f_out.flush()
-        hyperparams=best_hyperparams.tolist()
+        if ML=='KRR' or ML=='SVR':
+            mini_args = (X, y, condition,fixed_hyperparams)
+            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
+            # print best hyperparams
+            best_hyperparams = solver.x
+            best_rmse = solver.fun
+            position_of_best = all_rmse_values.index(total_best_rmse)
+            best_r = all_r_values[position_of_best]
+            print('#######################################')
+            print('#######################################')
+            print('Best hyperparameters:',best_hyperparams)
+            print('Best rmse:', best_rmse)
+            print('Best r:', total_best_r,flush=True)
+            print('#######################################')
+            print('#######################################')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(best_hyperparams)))
+            if print_log==True: f_out.write('Best rmse: %s \n' %(str(best_rmse)))
+            if print_log==True: f_out.write('Best r: %s \n' %(str(best_r)))
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.flush()
+            #hyperparams=best_hyperparams.tolist()
+        elif ML=='kNN':
+            for k in range(len(Neighbors)):
+                print('kNN, for k = %i' %(Neighbors[k]))
+                fixed_hyperparams.append(Neighbors[k])
+                mini_args = (X, y, condition,fixed_hyperparams)
+                solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.5,polish=False,workers=NCPU,updating='deferred')
+                # print best hyperparams
+                best_hyperparams = solver.x
+                best_rmse = solver.fun
+                #print('OUTSIDE:', final_r)
+                if k==0:
+                    total_best_hyperparams = best_hyperparams
+                    total_best_rmse = best_rmse
+                    best_k = Neighbors[k]
+                    #total_best_r = final_r
+                else:
+                    if best_rmse < total_best_rmse:
+                        total_best_hyperparams = best_hyperparams
+                        total_best_rmse = best_rmse
+                        best_k = Neighbors[k]
+                        #total_best_r = final_r
+            #hyperparams=total_best_hyperparams.tolist()
+            position_of_best = all_rmse_values.index(total_best_rmse)
+            total_best_r = all_r_values[position_of_best]
+            print('#######################################')
+            print('#######################################')
+            print('Best hyperparameters:', total_best_hyperparams)
+            print('Best kNN, k =', best_k)
+            print('Best rmse:', total_best_rmse)
+            print('Best r:', total_best_r,flush=True)
+            print('#######################################')
+            print('#######################################')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(total_best_hyperparams)))
+            if print_log==True: f_out.write('Best kNN, k = : %i \n' %(best_k))
+            if print_log==True: f_out.write('Best rmse: %s \n' %(str(total_best_rmse)))
+            if print_log==True: f_out.write('Best r: %s \n' %(str(total_best_r)))
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.write('#######################################\n')
+            if print_log==True: f_out.flush()
     ## Use initial hyperparameters
     elif optimize_hyperparams==False:
         condition='structure_and_electronic'
@@ -153,7 +208,12 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
         print('######################################')
         if print_log==True: f_out.write('Hyperparameters are not being optimized \n')
         fixed_hyperparams = []
-        if ML=='kNN': hyperparams=[gamma_el,gamma_d,gamma_a]
+        if ML=='kNN' and len(Neighbors)>1:
+            print('ERROR: Not optimizing parameters, but more than one possible value in "Neighbors" for kNN')
+            sys.exit()
+        if ML=='kNN': 
+            hyperparams=[gamma_el,gamma_d,gamma_a]
+            fixed_hyperparams.append(Neighbors[-1])
         if ML=='KRR': hyperparams=[gamma_el,gamma_d,gamma_a,alpha]
         if ML=='SVR': hyperparams=[gamma_el,gamma_d,gamma_a,C,epsilon]
         flat_hyperparams = hyperparams[0] + hyperparams[1:]
@@ -222,6 +282,8 @@ def read_initial_values(inp):
     kfold = ast.literal_eval(var_value[var_name.index('kfold')])
     plot_target_predictions = ast.literal_eval(var_value[var_name.index('plot_target_predictions')])
     plot_kNN_distances = ast.literal_eval(var_value[var_name.index('plot_kNN_distances')])
+    groups_acceptor_labels = ast.literal_eval(var_value[var_name.index('groups_acceptor_labels')])
+    group_test = ast.literal_eval(var_value[var_name.index('group_test')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -257,10 +319,14 @@ def read_initial_values(inp):
     print('######################################')
     print('# Machine Learning Algorithm options #')
     print('######################################')
+    print('plot_target_predictions =', plot_target_predictions)
     print('ML =', ML)
+    print('### Cross Validation #################')
     print('CV =', CV)
     if CV == 'kf': print('kfold =', kfold)
-    print('plot_target_predictions =', plot_target_predictions)
+    if CV == 'groups':
+        print('groups_acceptor_labels =', groups_acceptor_labels)
+        print('group_test =', group_test)
     print('### General hyperparameters ##########')
     print('optimize_hyperparams = ', optimize_hyperparams)
     print('gamma_el = ', gamma_el)
@@ -309,10 +375,15 @@ def read_initial_values(inp):
         f_out.write('######################################\n')
         f_out.write('# Machine Learning Algorithm options #\n')
         f_out.write('######################################\n')
-        f_out.write('ML %s\n' % str(ML))
-        f_out.write('CV %s\n' % str(CV))
         f_out.write('plot_target_predictions %s\n' % str(plot_target_predictions))
+        f_out.write('ML %s\n' % str(ML))
+        f_out.write('### Cross Validation #################\n')
+        f_out.write('CV %s\n' % str(CV))
+
         if CV=='kf': f_out.write('kfold %s\n' % str(kfold))
+        if CV=='groups':
+            f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
+            f_out.write('group_test %s\n' % str(group_test))
         f_out.write('### General hyperparameters ##########\n')
         f_out.write('optimize_hyperparams %s\n' % str(optimize_hyperparams))
         f_out.write('gamma_el %s\n' % str(gamma_el))
@@ -338,7 +409,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -426,6 +497,11 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
 
 ### ML Function to calculate rmse and r ###
 def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
+    global final_r
+    global all_rmse_values
+    global all_r_values
+    #print('TEST 1', all_rmse_values)
+    #print('TEST 2', all_rmse_values)
     # Assign hyperparameters
     if condition=='structure':
         gamma_el = fixed_hyperparams[0]
@@ -463,7 +539,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             epsilon = hyperparams[i+4]
     # Build kernel function and assign ML parameters
     if ML=='kNN':
-        ML_algorithm = KNeighborsRegressor(n_neighbors=Neighbors, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
+        neighbor_value=fixed_hyperparams[-1]
+        print('TEST kNN: k = ', neighbor_value)
+        ML_algorithm = KNeighborsRegressor(n_neighbors=neighbor_value, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
     elif ML=='KRR':
         kernel = build_hybrid_kernel(gamma_el=gamma_el,gamma_d=gamma_d,gamma_a=gamma_a)
         ML_algorithm = KernelRidge(alpha=alpha, kernel=kernel)
@@ -482,24 +560,24 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #print(X)
     if CV == 'groups':
         # Define groups (NEEDS TO BE EDITTED)
-        acceptor_group0 = [13,15,20,21,28,33]
-        acceptor_group1 = [1,8,9,12,16,18,19]
-        acceptor_group2 = [3,4,5,6]
-        acceptor_group3 = [2,4,6,10,11,29,30]
-        acceptor_group4 = [17,22,24,25,26,27]
-        acceptor_group5 = [23,31,32]
-        acceptor_group6 = [14,29,30]
-        acceptor_group7 = [7,17,26]
-        acceptor_group8 = [7,29,30]
+        #acceptor_group0 = [13,15,20,21,28,33]
+        #acceptor_group1 = [1,8,9,12,16,18,19]
+        #acceptor_group2 = [3,4,5,6]
+        #acceptor_group3 = [2,4,6,10,11,29,30]
+        #acceptor_group4 = [17,22,24,25,26,27]
+        #acceptor_group5 = [23,31,32]
+        #acceptor_group6 = [14,29,30]
+        #acceptor_group7 = [7,17,26]
+        #acceptor_group8 = [7,29,30]
         # Select which group will be used as test set (NEEDS TO BE EDITTED)
-        acceptor_group = acceptor_group7
+        #acceptor_group = acceptor_group3
         #print('X_newtest')
         X_test = []
         y_test = []
         X_train = []
         y_train = []
         for i in range(len(X)):
-            if X[i][0] in acceptor_group:
+            if X[i][0] in groups_acceptor_labels[group_test]:
                 #print('before:', i, X[i])
                 new_X = np.delete(X[i],0)
                 #print('test:',  i, new_X)
@@ -528,7 +606,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print(y_train)
         #print(len(y_train))
         # predict y values
-        #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+        ##############################
+        y_train_new = [item for dummy in y_train for item in dummy ]
+        y_train = y_train_new
+        ##############################
         y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
         #print('test y_pred', y_pred)
         # if kNN: calculate lists with kNN_distances and kNN_error
@@ -545,9 +626,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         y_real.append(y_test)
         #print('TEST', y_test.tolist(),y_pred.tolist())
         #sys.exit()
-        #print('y_real:')
-        #print(y_real)
-        y_predicted = [item for dummy in y_predicted for item in dummy ]
+        print('y_real:')
+        print(y_real)
+        #y_predicted = [item for dummy in y_predicted for item in dummy ]
         #print('y_predicted:')
         #print(y_predicted)
     #################################################################
@@ -603,10 +684,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_predicted.append(y_pred.tolist())
             y_real.append(y_test.tolist())
             #print('TEST', y_test.tolist(),y_pred.tolist())
-            #print('y_real:')
-            #print(y_real)
-            #print('y_predicted:')
-            #print(y_predicted)
+            print('y_real:')
+            print(y_real)
+            print('y_predicted:')
+            print(y_predicted)
     # Put results in a 1D list
     y_real_list=[]
     y_predicted_list=[]
@@ -637,6 +718,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_error_flat = [item for dummy in kNN_error for item in dummy]
         kNN_error_array=np.array(kNN_error_flat)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
+    final_r = r.tolist()
+    all_rmse_values.append(rms)
+    all_r_values.append(final_r)
+    #print('INSIDE:', final_r)
     # Print results
     print('New', ML, 'call:')
     print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r.tolist(), 'rmse:',rms,flush=True)
@@ -997,7 +1082,9 @@ def plot_scatter(x, y, plot_type, plot_name):
 ### Run main program ###
 start = time()
 # Read input values
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip) = read_initial_values(input_file_name)
+all_rmse_values = []
+all_r_values = []
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
