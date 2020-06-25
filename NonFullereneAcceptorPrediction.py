@@ -135,13 +135,13 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
-            position_of_best = all_rmse_values.index(total_best_rmse)
+            position_of_best = all_rmse_values.index(best_rmse)
             best_r = all_r_values[position_of_best]
             print('#######################################')
             print('#######################################')
             print('Best hyperparameters:',best_hyperparams)
             print('Best rmse:', best_rmse)
-            print('Best r:', total_best_r,flush=True)
+            print('Best r:', best_r,flush=True)
             print('#######################################')
             print('#######################################')
             if print_log==True: f_out.write('#######################################\n')
