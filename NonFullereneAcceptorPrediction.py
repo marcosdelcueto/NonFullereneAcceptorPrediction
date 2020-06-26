@@ -135,24 +135,26 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
-            position_of_best = all_rmse_values.index(best_rmse)
-            best_r = all_r_values[position_of_best]
-            print('#######################################')
             print('#######################################')
             print('Best hyperparameters:',best_hyperparams)
             print('Best rmse:', best_rmse)
-            print('Best r:', best_r,flush=True)
             print('#######################################')
-            print('#######################################')
-            if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(best_hyperparams)))
             if print_log==True: f_out.write('Best rmse: %s \n' %(str(best_rmse)))
-            if print_log==True: f_out.write('Best r: %s \n' %(str(best_r)))
-            if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.flush()
-            #hyperparams=best_hyperparams.tolist()
+            # Once optimized hyperparams are found, do final calculation using those values
+            hyperparams=best_hyperparams.tolist()
+            print('###############################################')
+            print('Doing final call with optimized hyperparameters')
+            print('###############################################')
+            if print_log==True: f_out.write('###############################################\n')
+            if print_log==True: f_out.write('Doing final call with optimized hyperparameters\n')
+            if print_log==True: f_out.write('###############################################\n')
+            if print_log==True: f_out.flush()
+            flat_hyperparams = hyperparams
+            func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
         elif ML=='kNN':
             for k in range(len(Neighbors)):
                 print('kNN, for k = %i' %(Neighbors[k]))
@@ -162,38 +164,38 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
                 # print best hyperparams
                 best_hyperparams = solver.x
                 best_rmse = solver.fun
-                #print('OUTSIDE:', final_r)
                 if k==0:
                     total_best_hyperparams = best_hyperparams
                     total_best_rmse = best_rmse
                     best_k = Neighbors[k]
-                    #total_best_r = final_r
                 else:
                     if best_rmse < total_best_rmse:
                         total_best_hyperparams = best_hyperparams
                         total_best_rmse = best_rmse
                         best_k = Neighbors[k]
-                        #total_best_r = final_r
-            #hyperparams=total_best_hyperparams.tolist()
-            position_of_best = all_rmse_values.index(total_best_rmse)
-            total_best_r = all_r_values[position_of_best]
-            print('#######################################')
             print('#######################################')
             print('Best hyperparameters:', total_best_hyperparams)
             print('Best kNN, k =', best_k)
             print('Best rmse:', total_best_rmse)
-            print('Best r:', total_best_r,flush=True)
             print('#######################################')
-            print('#######################################')
-            if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(total_best_hyperparams)))
             if print_log==True: f_out.write('Best kNN, k = : %i \n' %(best_k))
             if print_log==True: f_out.write('Best rmse: %s \n' %(str(total_best_rmse)))
-            if print_log==True: f_out.write('Best r: %s \n' %(str(total_best_r)))
-            if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.flush()
+            # Once optimized hyperparams are found, do final calculation using those values
+            hyperparams=best_hyperparams.tolist()
+            fixed_hyperparams.append(best_k)
+            print('###############################################')
+            print('Doing final call with optimized hyperparameters')
+            print('###############################################')
+            if print_log==True: f_out.write('###############################################\n')
+            if print_log==True: f_out.write('Doing final call with optimized hyperparameters\n')
+            if print_log==True: f_out.write('###############################################\n')
+            if print_log==True: f_out.flush()
+            flat_hyperparams = hyperparams
+            func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
     ## Use initial hyperparameters
     elif optimize_hyperparams==False:
         condition='structure_and_electronic'
@@ -287,7 +289,7 @@ def read_initial_values(inp):
     print_log = ast.literal_eval(var_value[var_name.index('print_log')])      # choose whether information is also written into a log file (Default: True)
     log_name = ast.literal_eval(var_value[var_name.index('log_name')])        # name of log file
     print_progress_every_x_percent = ast.literal_eval(var_value[var_name.index('print_progress_every_x_percent')])        # when to print progress
-    NCPU = ast.literal_eval(var_value[var_name.index('NCPU')])	              # select number of CPUs (-1 means all CPUs in a node)
+    NCPU = ast.literal_eval(var_value[var_name.index('NCPU')])                # select number of CPUs (-1 means all CPUs in a node)
     FP_length = ast.literal_eval(var_value[var_name.index('FP_length')])      # select number of CPUs (-1 means all CPUs in a node)
     weight_RMSE = ast.literal_eval(var_value[var_name.index('weight_RMSE')])  # select number of CPUs (-1 means all CPUs in a node)
     kfold = ast.literal_eval(var_value[var_name.index('kfold')])
@@ -511,11 +513,6 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
 
 ### ML Function to calculate rmse and r ###
 def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
-    global final_r
-    global all_rmse_values
-    global all_r_values
-    #print('TEST 1', all_rmse_values)
-    #print('TEST 2', all_rmse_values)
     # Assign hyperparameters
     if condition=='structure':
         gamma_el = fixed_hyperparams[0]
@@ -573,19 +570,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #################################################################
     #print(X)
     if CV == 'groups':
-        # Define groups (NEEDS TO BE EDITTED)
-        #acceptor_group0 = [13,15,20,21,28,33]
-        #acceptor_group1 = [1,8,9,12,16,18,19]
-        #acceptor_group2 = [3,4,5,6]
-        #acceptor_group3 = [2,4,6,10,11,29,30]
-        #acceptor_group4 = [17,22,24,25,26,27]
-        #acceptor_group5 = [23,31,32]
-        #acceptor_group6 = [14,29,30]
-        #acceptor_group7 = [7,17,26]
-        #acceptor_group8 = [7,29,30]
-        # Select which group will be used as test set (NEEDS TO BE EDITTED)
-        #acceptor_group = acceptor_group3
-        #print('X_newtest')
         X_test = []
         y_test = []
         X_train = []
@@ -593,15 +577,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print('TEST NEW #### look labels in:', groups_acceptor_labels[group_test])
         for i in range(len(X)):
             if X[i][0] in groups_acceptor_labels[group_test]:
-                #print('before:', i, X[i])
                 new_X = np.delete(X[i],0)
-                #print('test:',  i, new_X)
                 X_test.append(new_X)
                 y_test.append(y[i].tolist())
                 counter = counter+1
             else:
                 new_X = np.delete(X[i],0)
-                #print('train:',  i, new_X)
                 X_train.append(new_X)
                 y_train.append(y[i])
         for i in range(len(X_train)):
@@ -743,22 +724,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_error_flat = [item for dummy in kNN_error for item in dummy]
         kNN_error_array=np.array(kNN_error_flat)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
-    ######################################
-    ######################################
-    ### PROVI ###
-    #print('############')
-    #print('TEST new: ***')
-    #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
-    #if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
-    #print('r:', r)
-    #print('r.tolist():', r.tolist())
-    #print('############')
-    ######################################
-    ######################################
-    final_r = r.tolist()
-    all_rmse_values.append(rms)
-    all_r_values.append(final_r)
-    #print('INSIDE:', final_r)
     # Print results
     print('New', ML, 'call:')
     print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r.tolist(), 'rmse:',rms,flush=True)
