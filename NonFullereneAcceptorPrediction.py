@@ -453,11 +453,10 @@ def preprocess_fn(X):
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
     save_X_el = list(X_el[:])
-    xscaler = StandardScaler()
     if CV == 'groups':
         for i in range(Ndata):
             X_el[i] = X_el[i][1:]
-        X_el = xscaler.fit_transform(X_el)
+        #X_el = xscaler.fit_transform(X_el)
         new_X_el = []
         total_elec_descrip = 0
         for j in range(len(elec_descrip)):
@@ -471,6 +470,7 @@ def preprocess_fn(X):
             new_X_el.append(new_list)
         X_el = list(new_X_el)
     else:
+        xscaler = StandardScaler()
         X_el = xscaler.fit_transform(X_el)
     X = np.c_[ X_el,X_fp_d,X_fp_a]
 
@@ -590,6 +590,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_train[i] = y_train[i].tolist()
         for i in range(len(X_test)):
             X_test[i] = X_test[i].tolist()
+        #########################################################
+
+        #y_test = [item for dummy in y_test for item in dummy ]
+        #########################################################
         #print('final type(X_train)', type(X_train))
         #print('Total in group:', counter)
         #print('Final X_train:')
@@ -601,13 +605,37 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print('Final y_train:')
         #print(y_train)
         #print(len(y_train))
+        #print('Final y_test:')
+        #print(y_test)
+        #print(len(y_test))
         # predict y values
         ##############################
-        y_train = [item for dummy in y_train for item in dummy ]
+
         #y_train = y_train_new
         ##############################
+        ### Scale y_train and y_test ###
+        ################################
+        # Corrected scaler:
+        xscaler = StandardScaler().fit(X_train)
+        X_train = xscaler.transform(X_train)
+        X_test  = xscaler.transform(X_test)
+        yscaler = StandardScaler().fit(y_train)
+        y_train = yscaler.transform(y_train)
+        y_test  = yscaler.transform(y_test)
+        #print('Scaled y_train:')
+        #print(y_train)
+        #print(len(y_train))
+        #print('Scaled y_test:')
+        #print(y_test)
+        #print(len(y_test))
+        y_train = [item for dummy in y_train for item in dummy ]
         y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
-        #print('test y_pred', y_pred)
+        #print('test y_pred')
+        #print(y_pred)
+        y_pred = yscaler.inverse_transform(y_pred)
+        y_test = yscaler.inverse_transform(y_test)
+        #print('test y_pred_inverse')
+        #print(y_pred)
         # if kNN: calculate lists with kNN_distances and kNN_error
         if ML=='kNN':
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
@@ -627,7 +655,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #y_predicted = [item for dummy in y_predicted for item in dummy ]
         #print('y_predicted:')
         #print(y_predicted)
-    #################################################################
     #################################################################
     #################################################################
     elif CV == 'kf' or CV == 'loo':
