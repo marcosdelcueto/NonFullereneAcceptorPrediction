@@ -453,10 +453,11 @@ def preprocess_fn(X):
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
     save_X_el = list(X_el[:])
+    xscaler = StandardScaler()
     if CV == 'groups':
         for i in range(Ndata):
             X_el[i] = X_el[i][1:]
-        #X_el = xscaler.fit_transform(X_el)
+        X_el = xscaler.fit_transform(X_el)
         new_X_el = []
         total_elec_descrip = 0
         for j in range(len(elec_descrip)):
@@ -470,7 +471,6 @@ def preprocess_fn(X):
             new_X_el.append(new_list)
         X_el = list(new_X_el)
     else:
-        xscaler = StandardScaler()
         X_el = xscaler.fit_transform(X_el)
     X = np.c_[ X_el,X_fp_d,X_fp_a]
 
@@ -600,7 +600,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print(X_train)
         #print(len(X_train))
         #print('Final X_test:')
-        #print(X_test)
+        #print(X_test[0])
+        #print(type(X_test[0]))
         #print(len(X_test))
         #print('Final y_train:')
         #print(y_train)
@@ -609,19 +610,63 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print(y_test)
         #print(len(y_test))
         # predict y values
-        ##############################
-
-        #y_train = y_train_new
-        ##############################
-        ### Scale y_train and y_test ###
-        ################################
-        # Corrected scaler:
-        xscaler = StandardScaler().fit(X_train)
-        X_train = xscaler.transform(X_train)
-        X_test  = xscaler.transform(X_test)
-        yscaler = StandardScaler().fit(y_train)
-        y_train = yscaler.transform(y_train)
-        y_test  = yscaler.transform(y_test)
+        ##################################
+        # Scale X_train_el and X_test_el #
+        ##################################
+        #X_train_el=[[] for j in range(len(X_train))]
+        #X_train_fp_d=[[] for j in range(len(X_train))]
+        #X_train_fp_a=[[] for j in range(len(X_train))]
+        #X_test_el=[[] for j in range(len(X_test))]
+        #X_test_fp_d=[[] for j in range(len(X_test))]
+        #X_test_fp_a=[[] for j in range(len(X_test))]
+        #elec_descrip_total=0
+        #for k in elec_descrip:
+            #elec_descrip_total=elec_descrip_total+k
+        #elec_descrip_total=elec_descrip_total-1
+        #print('TEST elec_descrip_total', elec_descrip_total)
+        #print(len(X_train[0]))
+        #print(len(X_test[0]))
+        #print('TEST condition:', condition)
+        ## scale X_train
+        #for i in range(len(X_train)):
+            #if condition=='electronic' or condition=='structure_and_electronic' or gamma_el[0] != 0:
+                #for j in range(elec_descrip_total):
+                    #X_train_el[i].append(X_train[i][j])
+            #if condition=='structure' or condition=='structure_and_electronic' or gamma_d != 0 or gamma_a != 0:
+                #for j in range(elec_descrip_total,elec_descrip_total+FP_length):
+                    #X_train_fp_d[i].append(X_train[i][j])
+                #for j in range(elec_descrip_total+FP_length,elec_descrip_total+2*FP_length):
+                    #X_train_fp_a[i].append(X_train[i][j])
+        ## scale X_test
+        #for i in range(len(X_test)):
+            #if condition=='electronic' or condition=='structure_and_electronic' or gamma_el[0] != 0:
+                #for j in range(elec_descrip_total):
+                    #X_test_el[i].append(X_test[i][j])
+            #if condition=='structure' or condition=='structure_and_electronic' or gamma_d != 0 or gamma_a != 0:
+                #for j in range(elec_descrip_total,elec_descrip_total+FP_length):
+                    #X_test_fp_d[i].append(X_test[i][j])
+                #for j in range(elec_descrip_total+FP_length,elec_descrip_total+2*FP_length):
+                    #X_test_fp_a[i].append(X_test[i][j])
+        #print('TEST X_test_el:')
+        #print(X_test_el)
+        #print('length train:', len(X_train_el),len(X_train_fp_d),len(X_train_fp_a))
+        #print('length test:', len(X_test_el),len(X_test_fp_d),len(X_test_fp_a))
+        #xscaler = StandardScaler().fit(X_train_el)
+        #X_train_el = xscaler.transform(X_train_el)
+        #X_test_el  = xscaler.transform(X_test_el)
+        #X_train = np.c_[ X_train_el,X_train_fp_d,X_train_fp_a]
+        #X_test = np.c_[ X_test_el,X_test_fp_d,X_test_fp_a]
+        ##################################
+        # Corrected y scaler:
+        #xscaler = StandardScaler().fit(X_train)
+        #X_train = xscaler.transform(X_train)
+        #X_test  = xscaler.transform(X_test)
+        #yscaler = StandardScaler().fit(y_train)
+        #y_train = yscaler.transform(y_train)
+        #y_test  = yscaler.transform(y_test)
+        #print('Scaled X_test:')
+        #print(X_test[0].tolist())
+        #print(type(X_test[0]))
         #print('Scaled y_train:')
         #print(y_train)
         #print(len(y_train))
@@ -632,8 +677,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
         #print('test y_pred')
         #print(y_pred)
-        y_pred = yscaler.inverse_transform(y_pred)
-        y_test = yscaler.inverse_transform(y_test)
+        #y_pred = yscaler.inverse_transform(y_pred)
+        #y_test = yscaler.inverse_transform(y_test)
         #print('test y_pred_inverse')
         #print(y_pred)
         # if kNN: calculate lists with kNN_distances and kNN_error

@@ -7,7 +7,7 @@
 #######################################
 ########## Parallelization ############
 #######################################
-NCPU = 1                              # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
+NCPU = 2                              # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
 #######################################
 ############ Verbose options ##########
 #######################################
@@ -35,31 +35,31 @@ FP_length = 2048						     # number of entries of each fingerprint
 # Machine Learning Algorithm options ##
 #######################################
 plot_target_predictions = None 		  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
-ML = 'kNN'                            # 'kNN' or 'KRR' or 'SVR'
+ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'loo'                         # select 'loo' or 'kf' or 'groups'
+CV = 'groups'                         # select 'loo' or 'kf' or 'groups'
 kfold = 2                             # only used uf CV=kf
 acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[3,4,5,6],[2,4,6,10,11,29,30],[17,22,24,25,26,27],[23,31,32],[14,29,30],[7,17,26],[7,29,30]]
-group_test = 3                        # group chosen as test group. Note that groups start at 0, 1, 2, 3, 4...
+group_test = 7                        # group chosen as test group. Note that groups start at 0, 1, 2, 3, 4...
 ### General hyperparameters ###########
-optimize_hyperparams = False     	     # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.3835]					  # hyperparameters with weights of d_el
-gamma_d  = 4.0445         			  	 	  # hyperparameter with weight of d_fp_d
-gamma_a  = 0.5520      		   	  		  # hyperparameter with weight of d_fp_a
-gamma_el_lim = [(0.0,6.0)] 		  # range in which each gamma_el is optimized
-gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
-gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
+optimize_hyperparams = False     	  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
+gamma_el = [0.4053124854368355]		  # hyperparameters with weights of d_el
+gamma_d  = 0.19399357374018744        # hyperparameter with weight of d_fp_d
+gamma_a  = 2.4612399504296345      	  # hyperparameter with weight of d_fp_a
+gamma_el_lim = [(0.0,4.0)] 		     # range in which each gamma_el is optimized
+gamma_d_lim  = (0.0, 4.0)         	  # range in which gamma_d is optimized
+gamma_a_lim  = (0.0, 4.0)         	  # range in which gamma_a is optimized
 weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Default: 'linear'
 ### k-Nearest Neighbors ('kNN') #######
-Neighbors = [3]        # number of nearest-neighbors
+Neighbors = [5]        # number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
-alpha = 0.12                     # kernel hyperparameter
-alpha_lim  = (0.01, 0.12)         	  # range in which alpha hyperparam is optimized
+alpha = 0.0101405                     # kernel hyperparameter
+alpha_lim  = (0.01, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
-C = 9.901862299867322                 # regularization hyperparameter
-epsilon = 0.10125374899118977         # epsilon-SVR
-C_lim = (0.1,10)                      # range in which C is optimized
-epsilon_lim = (0.1,10)                # range in which epsilon is optimized
+C = 6.614087778435939                 # regularization hyperparameter
+epsilon = 0.15318514208718004         # epsilon-SVR
+C_lim = (0.1,10.0)                    # range in which C is optimized
+epsilon_lim = (0.01,1.00)             # range in which epsilon is optimized
 #######################################
