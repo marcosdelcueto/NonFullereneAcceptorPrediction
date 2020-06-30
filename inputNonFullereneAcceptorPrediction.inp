@@ -7,7 +7,7 @@
 #######################################
 ########## Parallelization ############
 #######################################
-NCPU = 2                              # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
+NCPU = 1                              # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
 #######################################
 ############ Verbose options ##########
 #######################################
@@ -56,10 +56,10 @@ Neighbors = [5]        # number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
 alpha = 0.0101405                     # kernel hyperparameter
-alpha_lim  = (0.01, 10.00)         	  # range in which alpha hyperparam is optimized
+alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
 C = 6.614087778435939                 # regularization hyperparameter
 epsilon = 0.15318514208718004         # epsilon-SVR
 C_lim = (0.1,10.0)                    # range in which C is optimized
-epsilon_lim = (0.01,1.00)             # range in which epsilon is optimized
+epsilon_lim = (0.00,1.00)             # range in which epsilon is optimized
 #######################################
