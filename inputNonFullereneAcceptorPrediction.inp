@@ -35,7 +35,7 @@ FP_length = 2048						     # number of entries of each fingerprint
 # Machine Learning Algorithm options ##
 #######################################
 plot_target_predictions = None 		  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
-ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
+ML = 'kNN'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
 CV = 'groups'                         # select 'loo' or 'kf' or 'groups'
 kfold = 2                             # only used uf CV=kf
@@ -43,16 +43,16 @@ acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[3,4,5,6],[2,4,6,10,11,29,30],[17,22,24,25,26,27],[23,31,32],[14,29,30],[7,17,26],[7,29,30]]
 group_test = 7                        # group chosen as test group. Note that groups start at 0, 1, 2, 3, 4...
 ### General hyperparameters ###########
-optimize_hyperparams = False     	  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.4053124854368355]		  # hyperparameters with weights of d_el
-gamma_d  = 0.19399357374018744        # hyperparameter with weight of d_fp_d
-gamma_a  = 2.4612399504296345      	  # hyperparameter with weight of d_fp_a
-gamma_el_lim = [(0.0,4.0)] 		     # range in which each gamma_el is optimized
+optimize_hyperparams = True     	  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
+gamma_el = [0.4]		  # hyperparameters with weights of d_el
+gamma_d  = 0.0        # hyperparameter with weight of d_fp_d
+gamma_a  = 0.0     	  # hyperparameter with weight of d_fp_a
+gamma_el_lim = [(0.0,1.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 4.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 4.0)         	  # range in which gamma_a is optimized
 weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Default: 'linear'
 ### k-Nearest Neighbors ('kNN') #######
-Neighbors = [5]        # number of nearest-neighbors
+Neighbors = [5,7]        # number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
 alpha = 0.0101405                     # kernel hyperparameter

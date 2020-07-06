@@ -1,0 +1,174 @@
+##### START PRINT INPUT OPTIONS ######
+######################################
+########### Parallelization ##########
+######################################
+NCPU 1
+######################################
+############ Verbose options #########
+######################################
+print_log True
+log_name log_NonFullereneAcceptorPrediction.log
+print_progress_every_x_percent 10
+######################################
+######### Data base options ##########
+######################################
+db_file database.csv
+Ndata 566
+xcols [['SMILES-DFP', 'SMILES-AFP'], ['ACCEPTORNo', 'HOMO-D', 'LUMO-D', 'LUMO-A', 'Reor-D', 'Reor-A', 'sum of f-D', 'sum of f-A', 'XLOGP3-D', 'XLOGP3-A']]
+ycols ['PCE']
+FP_length 2048
+######################################
+# Machine Learning Algorithm options #
+######################################
+plot_target_predictions None
+ML kNN
+### Cross Validation #################
+CV groups
+acceptor_label_column ACCEPTORNo
+groups_acceptor_labels [[13, 15, 20, 21, 28, 33], [1, 8, 9, 12, 16, 18, 19], [3, 4, 5, 6], [2, 4, 6, 10, 11, 29, 30], [17, 22, 24, 25, 26, 27], [23, 31, 32], [14, 29, 30], [7, 17, 26], [7, 29, 30]]
+group_test 7
+### General hyperparameters ##########
+optimize_hyperparams True
+gamma_el [0.4]
+gamma_d 0.0
+gamma_a 0.0
+gamma_el_lim [(0.0, 1.0)]
+gamma_d_lim (0.0, 4.0)
+gamma_a_lim (0.0, 4.0)
+weight_RMSE linear
+### k-Nearest Neighbors ("kNN") ######
+Neighbors [5, 7]
+plot_kNN_distances None
+####### END PRINT INPUT OPTIONS ######
+Optimize hyperparameters using only electronic (physical) descriptors 
+New kNN call: 
+gamma_el: [0.41097341495407874], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.5348542917743409], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.059473305056998105], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.2139238770087396], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.7588024484474603], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.6217184225846553], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.11302643002799717], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.3119284261188867], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.18278572986854497], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.9638493490630002], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.9008097946763357], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.8333793943462654], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.530844826344879], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.36970580948230314], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.6876664938628675], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.4033409687260517], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.1532119632643114], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.9181999901351858], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.007839034388451072], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.27906903357427454], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.1715817695267418], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.4016199010751917], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.14648237012567578], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.44497690987672206], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.4033409687260517], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.09794401676353315], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.47657771823749223], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.8226413303951806], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.4016199010751917], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.6701602113059387], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.165479, rmse: 2.057908 
+New kNN call: 
+gamma_el: [0.4960702917132377], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.7653952507431564], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.10185292976339005], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.02528475959668014], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.9272307843850662], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.988892242480891], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.22923883667662648], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.14462165045743436], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.3048955104077879], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.6087563389013276], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.7031590975238519], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.5554460606725773], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.3536044348299171], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.4628793716424549], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.8502981934330046], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.58803836076605], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.47940524194742085], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.5055752131529546], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.6556551824857431], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.981928748489694], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.955446001590913], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.8512901182814151], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.794379725809787], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.6528023225494528], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.8430537807618291], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.44816529051153553], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.3168404486080569], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.9939747906928894], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.4617218270403074], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+New kNN call: 
+gamma_el: [0.6189649033657147], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+#######################################
+Best hyperparameters: [0.76539525] 
+Best kNN, k = : 7 
+Best rmse: 1.9447923020674276 
+#######################################
+###############################################
+Doing final call with optimized hyperparameters
+###############################################
+New kNN call: 
+gamma_el: [0.7653952507431564], gamma_d: 0.000000 gamma_a: 0.000000, r: -0.072426, rmse: 1.944792 
+Process took 144.51 seconds

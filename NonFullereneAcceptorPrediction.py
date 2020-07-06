@@ -185,7 +185,7 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.flush()
             # Once optimized hyperparams are found, do final calculation using those values
-            hyperparams=best_hyperparams.tolist()
+            hyperparams=total_best_hyperparams.tolist()
             fixed_hyperparams.append(best_k)
             print('###############################################')
             print('Doing final call with optimized hyperparameters')
