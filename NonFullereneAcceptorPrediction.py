@@ -576,6 +576,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kernel = build_hybrid_kernel(gamma_el=gamma_el,gamma_d=gamma_d,gamma_a=gamma_a)
         ML_algorithm = KernelRidge(alpha=alpha, kernel=kernel)
     elif ML=='SVR':
+        #print('BEFORE EXECUTION 1')
+        #print(X)
+        #print(len(X))
+        #print(len(X[0]))
         ML_algorithm = SVR(kernel=functools.partial(kernel_SVR, gamma_el=gamma_el, gamma_d=gamma_d, gamma_a=gamma_a), C=C, epsilon=epsilon)
     # Initialize values
     y_predicted = []
@@ -589,6 +593,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #################################################################
     #print(X)
     if CV == 'groups':
+        #yscaler = StandardScaler()
+        #y = yscaler.fit_transform(y)
         X_test = []
         y_test = []
         X_train = []
@@ -693,7 +699,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         #print(y_test)
         #print(len(y_test))
         y_train = [item for dummy in y_train for item in dummy ]
+        #print('BEFORE EXECUTION 2')
+        #print(X_train)
+        #print(len(X_train))
+        #print(len(X_train[0]))
         y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+        #print('AFTER EXECUTION 2')
         #print('test y_pred')
         #print(y_pred)
         #y_pred = yscaler.inverse_transform(y_pred)
@@ -703,6 +714,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         # if kNN: calculate lists with kNN_distances and kNN_error
         if ML=='kNN':
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+            #print('kNN DISTANCES:')
+            #print(provi_kNN_dist)
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
                 kNN_distances.append(kNN_dist)
@@ -714,8 +727,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         y_real.append(y_test)
         #print('TEST', y_test.tolist(),y_pred.tolist())
         #sys.exit()
-        #print('y_real:')
-        #print(y_real)
+        print('y_real:')
+        print(y_real)
         #y_predicted = [item for dummy in y_predicted for item in dummy ]
         #print('y_predicted:')
         #print(y_predicted)
@@ -794,6 +807,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #print('TEST y_real_list_list:', y_real_list_list)
     #print('TEST y_predicted_list_list:', y_predicted_list_list)
     ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
+    ### testing ###
+    print('y_real, y_predicted')
+    for i in range(len(y_real_list_list)):
+        print(y_real_list_list[i],y_predicted_list_list[i])
+    ###############
     all_identical = 0
     for i in range(len(y_predicted_list_list)-1):
         if y_predicted_list_list[i] == y_predicted_list_list[i+1]: all_identical = all_identical+1
@@ -814,6 +832,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_distances_array=np.array(kNN_distances)
         kNN_error_flat = [item for dummy in kNN_error for item in dummy]
         kNN_error_array=np.array(kNN_error_flat)
+        print('kNN distances:')
+        print(kNN_distances_array)
+        print('kNN error:')
+        print(kNN_error_array)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
     print('New', ML, 'call:')
@@ -828,6 +850,14 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 
 ### SVR kernel function
 def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
+    #print('TEST _x1')
+    #print(_x1)
+    #print(len(_x1))
+    #print(len(_x1[0]))
+    #print('TEST _x2')
+    #print(_x2)
+    #print(len(_x2))
+    #print(len(_x2[0]))
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
@@ -838,6 +868,8 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     elec_descrip_total=0
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
+    if CV=='groups': elec_descrip_total=elec_descrip_total-1
+    #print('elec_descrip_total', elec_descrip_total)
 
     ### K_el ###
     ini = 0
@@ -885,30 +917,46 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         Xii_d = np.repeat(np.linalg.norm(Xi_fp_d, axis=1, keepdims=True)**2, size_matrix2, axis=1)
         Xjj_d = np.repeat(np.linalg.norm(Xj_fp_d, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
         T_d = np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T))
+        #print('Tanimoto D')
+        #print(T_d)
         D_fp_d  = 1 - T_d
         D2_fp_d = np.square(D_fp_d)
+        #print('TEST donor:')
+        #print(D2_fp_d)
         K_fp_d = np.exp(-gamma_d*D2_fp_d)
     ### K_fp_a ###
     if gamma_a != 0.0:
         # define Xi_fp_a
         Xi_fp_a = [[] for j in range(size_matrix1)]
         for i in range(size_matrix1):
-            for j in range(FP_length):
+            for j in range(FP_length,2*FP_length):
+            #for j in range(FP_length):
                 Xi_fp_a[i].append(_x1[i][j+elec_descrip_total])
         Xi_fp_a = np.array(Xi_fp_a)
         # define Xj_fp_a
         Xj_fp_a = [[] for j in range(size_matrix2)]
         for i in range(size_matrix2):
-            for j in range(FP_length):
+            #for j in range(FP_length):
+            for j in range(FP_length,2*FP_length):
                 Xj_fp_a[i].append(_x2[i][j+elec_descrip_total])
         Xj_fp_a = np.array(Xj_fp_a)
         # calculate K_fp_a
         Xii_a = np.repeat(np.linalg.norm(Xi_fp_a, axis=1, keepdims=True)**2, size_matrix2, axis=1)
         Xjj_a = np.repeat(np.linalg.norm(Xj_fp_a, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
-        T_d = np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T))
-        D_fp_a  = 1 - T_d
+        T_a = np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T))
+        #print('Tanimoto A')
+        #print(T_a)
+        D_fp_a  = 1 - T_a
         D2_fp_a = np.square(D_fp_a)
+        #print('TEST acceptor:')
+        #print(D2_fp_a)
         K_fp_a = np.exp(-gamma_a*D2_fp_a)
+        #print('test gp donor:')
+        #print(Xjj_d)
+        #print('test gp acceptor:')
+        #print(Xjj_a)
+        #if T_a.all() == T_d.all():
+            #print('TANIMOTO indeces are identical')
     # Calculate final kernel
     K = K * K_fp_d * K_fp_a
     #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
