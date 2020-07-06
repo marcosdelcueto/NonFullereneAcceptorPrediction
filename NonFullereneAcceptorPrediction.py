@@ -158,21 +158,37 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
         elif ML=='kNN':
             for k in range(len(Neighbors)):
                 print('kNN, for k = %i' %(Neighbors[k]))
-                fixed_hyperparams.append(Neighbors[k])
-                mini_args = (X, y, condition,fixed_hyperparams)
-                solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
-                # print best hyperparams
-                best_hyperparams = solver.x
-                best_rmse = solver.fun
-                if k==0:
-                    total_best_hyperparams = best_hyperparams
-                    total_best_rmse = best_rmse
-                    best_k = Neighbors[k]
-                else:
-                    if best_rmse < total_best_rmse:
+                if condition=='electronic':
+                    #hyperparams=[gamma_el,gamma_d,gamma_a]
+                    fixed_hyperparams.append(Neighbors[k])
+                    flat_hyperparams = hyperparams[0] + hyperparams[1:]
+                    best_rmse = func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
+                    best_hyperparams = flat_hyperparams
+                    if k==0:
                         total_best_hyperparams = best_hyperparams
                         total_best_rmse = best_rmse
                         best_k = Neighbors[k]
+                    else:
+                        if best_rmse < total_best_rmse:
+                            total_best_hyperparams = best_hyperparams
+                            total_best_rmse = best_rmse
+                            best_k = Neighbors[k]
+                if condition=='structure' or condition=='structure_and_electronic':
+                    fixed_hyperparams.append(Neighbors[k])
+                    mini_args = (X, y, condition,fixed_hyperparams)
+                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
+                    # print best hyperparams
+                    best_hyperparams = solver.x
+                    best_rmse = solver.fun
+                    if k==0:
+                        total_best_hyperparams = best_hyperparams
+                        total_best_rmse = best_rmse
+                        best_k = Neighbors[k]
+                    else:
+                        if best_rmse < total_best_rmse:
+                            total_best_hyperparams = best_hyperparams
+                            total_best_rmse = best_rmse
+                            best_k = Neighbors[k]
             print('#######################################')
             print('Best hyperparameters:', total_best_hyperparams)
             print('Best kNN, k =', best_k)
@@ -185,7 +201,10 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.flush()
             # Once optimized hyperparams are found, do final calculation using those values
-            hyperparams=total_best_hyperparams.tolist()
+            if type(total_best_hyperparams) is list: 
+                hyperparams=total_best_hyperparams
+            else:
+                hyperparams=total_best_hyperparams.tolist()
             fixed_hyperparams.append(best_k)
             print('###############################################')
             print('Doing final call with optimized hyperparameters')
