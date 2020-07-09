@@ -157,7 +157,7 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
         elif ML=='kNN':
             for k in range(len(Neighbors)):
-                print('kNN, for k = %i' %(Neighbors[k]))
+                #print('kNN, for k = %i' %(Neighbors[k]))
                 if condition=='electronic':
                     #hyperparams=[gamma_el,gamma_d,gamma_a]
                     fixed_hyperparams.append(Neighbors[k])
@@ -727,8 +727,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         y_real.append(y_test)
         #print('TEST', y_test.tolist(),y_pred.tolist())
         #sys.exit()
-        print('y_real:')
-        print(y_real)
+        #print('y_real:')
+        #print(y_real)
         #y_predicted = [item for dummy in y_predicted for item in dummy ]
         #print('y_predicted:')
         #print(y_predicted)
@@ -808,9 +808,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #print('TEST y_predicted_list_list:', y_predicted_list_list)
     ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
     ### testing ###
-    print('y_real, y_predicted')
-    for i in range(len(y_real_list_list)):
-        print(y_real_list_list[i],y_predicted_list_list[i])
+    #print('y_real, y_predicted')
+    #for i in range(len(y_real_list_list)):
+        #print(y_real_list_list[i],y_predicted_list_list[i])
     ###############
     all_identical = 0
     for i in range(len(y_predicted_list_list)-1):
@@ -832,13 +832,14 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_distances_array=np.array(kNN_distances)
         kNN_error_flat = [item for dummy in kNN_error for item in dummy]
         kNN_error_array=np.array(kNN_error_flat)
-        print('kNN distances:')
-        print(kNN_distances_array)
-        print('kNN error:')
-        print(kNN_error_array)
+        #print('kNN distances:')
+        #print(kNN_distances_array)
+        #print('kNN error:')
+        #print(kNN_error_array)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
     print('New', ML, 'call:')
+    if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
     print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r.tolist(), 'rmse:',rms,flush=True)
     if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
     if print_log==True: 
