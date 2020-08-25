@@ -60,15 +60,6 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
         X[i][0]=X_d
         X[i][1]=X_a
     X=preprocess_fn(X)
-    ## Print some verbose info
-    #print('X:',flush=True)
-    #print(X,flush=True)
-    #print('Entries for each a/d pair:',len(X[0]))
-    #if print_log==True: 
-        #f_out.write('X: \n')
-        #f_out.write('%s \n' %(str(X)))
-        #f_out.write('Entries for each a/d pair: %i \n' %(len(X[0])))
-        #f_out.flush()
     # Get optimimum hyperparameters
     if optimize_hyperparams==True:
         fixed_hyperparams = []
@@ -312,6 +303,7 @@ def read_initial_values(inp):
     FP_length = ast.literal_eval(var_value[var_name.index('FP_length')])      # select number of CPUs (-1 means all CPUs in a node)
     weight_RMSE = ast.literal_eval(var_value[var_name.index('weight_RMSE')])  # select number of CPUs (-1 means all CPUs in a node)
     kfold = ast.literal_eval(var_value[var_name.index('kfold')])
+    Nlast = ast.literal_eval(var_value[var_name.index('Nlast')])
     plot_target_predictions = ast.literal_eval(var_value[var_name.index('plot_target_predictions')])
     plot_kNN_distances = ast.literal_eval(var_value[var_name.index('plot_kNN_distances')])
     groups_acceptor_labels = ast.literal_eval(var_value[var_name.index('groups_acceptor_labels')])
@@ -356,6 +348,7 @@ def read_initial_values(inp):
     print('### Cross Validation #################')
     print('CV =', CV)
     if CV == 'kf': print('kfold =', kfold)
+    if CV == 'last': print('Nlast =', Nlast)
     if CV == 'groups':
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
@@ -414,6 +407,7 @@ def read_initial_values(inp):
         f_out.write('CV %s\n' % str(CV))
 
         if CV=='kf': f_out.write('kfold %s\n' % str(kfold))
+        if CV=='last': f_out.write('Nlast %s\n' % str(Nlast))
         if CV=='groups':
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
@@ -443,7 +437,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -570,16 +564,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     # Build kernel function and assign ML parameters
     if ML=='kNN':
         neighbor_value=fixed_hyperparams[-1]
-        #print('TEST kNN: k = ', neighbor_value)
         ML_algorithm = KNeighborsRegressor(n_neighbors=neighbor_value, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
     elif ML=='KRR':
         kernel = build_hybrid_kernel(gamma_el=gamma_el,gamma_d=gamma_d,gamma_a=gamma_a)
         ML_algorithm = KernelRidge(alpha=alpha, kernel=kernel)
     elif ML=='SVR':
-        #print('BEFORE EXECUTION 1')
-        #print(X)
-        #print(len(X))
-        #print(len(X[0]))
         ML_algorithm = SVR(kernel=functools.partial(kernel_SVR, gamma_el=gamma_el, gamma_d=gamma_d, gamma_a=gamma_a), C=C, epsilon=epsilon)
     # Initialize values
     y_predicted = []
@@ -589,17 +578,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     kNN_distances = []
     kNN_error = []
     #################################################################
-    #################################################################
-    #################################################################
-    #print(X)
+    # Do novel-group validation
     if CV == 'groups':
-        #yscaler = StandardScaler()
-        #y = yscaler.fit_transform(y)
         X_test = []
         y_test = []
         X_train = []
         y_train = []
-        #print('TEST NEW #### look labels in:', groups_acceptor_labels[group_test])
         for i in range(len(X)):
             if X[i][0] in groups_acceptor_labels[group_test]:
                 new_X = np.delete(X[i],0)
@@ -615,107 +599,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_train[i] = y_train[i].tolist()
         for i in range(len(X_test)):
             X_test[i] = X_test[i].tolist()
-        #########################################################
-
-        #y_test = [item for dummy in y_test for item in dummy ]
-        #########################################################
-        #print('final type(X_train)', type(X_train))
-        #print('Total in group:', counter)
-        #print('Final X_train:')
-        #print(X_train)
-        #print(len(X_train))
-        #print('Final X_test:')
-        #print(X_test[0])
-        #print(type(X_test[0]))
-        #print(len(X_test))
-        #print('Final y_train:')
-        #print(y_train)
-        #print(len(y_train))
-        #print('Final y_test:')
-        #print(y_test)
-        #print(len(y_test))
-        # predict y values
-        ##################################
-        # Scale X_train_el and X_test_el #
-        ##################################
-        #X_train_el=[[] for j in range(len(X_train))]
-        #X_train_fp_d=[[] for j in range(len(X_train))]
-        #X_train_fp_a=[[] for j in range(len(X_train))]
-        #X_test_el=[[] for j in range(len(X_test))]
-        #X_test_fp_d=[[] for j in range(len(X_test))]
-        #X_test_fp_a=[[] for j in range(len(X_test))]
-        #elec_descrip_total=0
-        #for k in elec_descrip:
-            #elec_descrip_total=elec_descrip_total+k
-        #elec_descrip_total=elec_descrip_total-1
-        #print('TEST elec_descrip_total', elec_descrip_total)
-        #print(len(X_train[0]))
-        #print(len(X_test[0]))
-        #print('TEST condition:', condition)
-        ## scale X_train
-        #for i in range(len(X_train)):
-            #if condition=='electronic' or condition=='structure_and_electronic' or gamma_el[0] != 0:
-                #for j in range(elec_descrip_total):
-                    #X_train_el[i].append(X_train[i][j])
-            #if condition=='structure' or condition=='structure_and_electronic' or gamma_d != 0 or gamma_a != 0:
-                #for j in range(elec_descrip_total,elec_descrip_total+FP_length):
-                    #X_train_fp_d[i].append(X_train[i][j])
-                #for j in range(elec_descrip_total+FP_length,elec_descrip_total+2*FP_length):
-                    #X_train_fp_a[i].append(X_train[i][j])
-        ## scale X_test
-        #for i in range(len(X_test)):
-            #if condition=='electronic' or condition=='structure_and_electronic' or gamma_el[0] != 0:
-                #for j in range(elec_descrip_total):
-                    #X_test_el[i].append(X_test[i][j])
-            #if condition=='structure' or condition=='structure_and_electronic' or gamma_d != 0 or gamma_a != 0:
-                #for j in range(elec_descrip_total,elec_descrip_total+FP_length):
-                    #X_test_fp_d[i].append(X_test[i][j])
-                #for j in range(elec_descrip_total+FP_length,elec_descrip_total+2*FP_length):
-                    #X_test_fp_a[i].append(X_test[i][j])
-        #print('TEST X_test_el:')
-        #print(X_test_el)
-        #print('length train:', len(X_train_el),len(X_train_fp_d),len(X_train_fp_a))
-        #print('length test:', len(X_test_el),len(X_test_fp_d),len(X_test_fp_a))
-        #xscaler = StandardScaler().fit(X_train_el)
-        #X_train_el = xscaler.transform(X_train_el)
-        #X_test_el  = xscaler.transform(X_test_el)
-        #X_train = np.c_[ X_train_el,X_train_fp_d,X_train_fp_a]
-        #X_test = np.c_[ X_test_el,X_test_fp_d,X_test_fp_a]
-        ##################################
-        # Corrected y scaler:
-        #xscaler = StandardScaler().fit(X_train)
-        #X_train = xscaler.transform(X_train)
-        #X_test  = xscaler.transform(X_test)
-        #yscaler = StandardScaler().fit(y_train)
-        #y_train = yscaler.transform(y_train)
-        #y_test  = yscaler.transform(y_test)
-        #print('Scaled X_test:')
-        #print(X_test[0].tolist())
-        #print(type(X_test[0]))
-        #print('Scaled y_train:')
-        #print(y_train)
-        #print(len(y_train))
-        #print('Scaled y_test:')
-        #print(y_test)
-        #print(len(y_test))
         y_train = [item for dummy in y_train for item in dummy ]
-        #print('BEFORE EXECUTION 2')
-        #print(X_train)
-        #print(len(X_train))
-        #print(len(X_train[0]))
         y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
-        #print('AFTER EXECUTION 2')
-        #print('test y_pred')
-        #print(y_pred)
-        #y_pred = yscaler.inverse_transform(y_pred)
-        #y_test = yscaler.inverse_transform(y_test)
-        #print('test y_pred_inverse')
-        #print(y_pred)
         # if kNN: calculate lists with kNN_distances and kNN_error
         if ML=='kNN':
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-            #print('kNN DISTANCES:')
-            #print(provi_kNN_dist)
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
                 kNN_distances.append(kNN_dist)
@@ -723,17 +611,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             kNN_error.append(error)
         # add predicted values in this LOO to list with total
         y_predicted.append(y_pred.tolist())
-        #y_predicted.append(y_pred)
         y_real.append(y_test)
-        #print('TEST', y_test.tolist(),y_pred.tolist())
-        #sys.exit()
-        #print('y_real:')
-        #print(y_real)
-        #y_predicted = [item for dummy in y_predicted for item in dummy ]
-        #print('y_predicted:')
-        #print(y_predicted)
-    #################################################################
-    #################################################################
+    # Do regular cross-validation
     elif CV == 'kf' or CV == 'loo':
         # Cross-Validation
         if CV=='kf':
@@ -743,10 +622,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             loo = LeaveOneOut()
             validation=loo.split(X)
         for train_index, test_index in validation:
-            #print('train:')
-            #print(train_index)
-            #print('test:')
-            #print(test_index)
             # Print progress
             if CV=='loo':
                 if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
@@ -760,18 +635,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             # assign train and test indeces
             X_train,X_test=X[train_index],X[test_index]
             y_train,y_test=y[train_index],y[test_index]
-            #print('Final X_train:')
-            #print(X_train)
-            #print(len(X_train))
-            #print('Final X_test:')
-            #print(X_test)
-            #print(len(X_test))
-            #print('Final y_train:')
-            #print(y_train)
-            #print(len(y_train))
             # predict y values
             y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-            #print('test y_pred', y_pred)
             # if kNN: calculate lists with kNN_distances and kNN_error
             if ML=='kNN':
                 provi_kNN_dist=ML_algorithm.kneighbors(X_test)
@@ -783,11 +648,21 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             # add predicted values in this LOO to list with total
             y_predicted.append(y_pred.tolist())
             y_real.append(y_test.tolist())
-            #print('TEST', y_test.tolist(),y_pred.tolist())
-            #print('y_real:')
-            #print(y_real)
-            #print('y_predicted:')
-            #print(y_predicted)
+    elif CV =='last':
+        X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
+        # predict y values
+        y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+        # if kNN: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN':
+            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+            for i in range(len(provi_kNN_dist[0])):
+                kNN_dist=np.mean(provi_kNN_dist[0][i])
+                kNN_distances.append(kNN_dist)
+            error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+            kNN_error.append(error)
+        # add predicted values in this LOO to list with total
+        y_predicted.append(y_pred.tolist())
+        y_real.append(y_test.tolist())
     # Put results in a 1D list
     y_real_list=[]
     y_predicted_list=[]
@@ -804,24 +679,14 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         weights = y_real_list_list / np.linalg.norm(y_real_list_list) # weights proportional to PCE
     elif weight_RMSE == 'linear':
         weights = np.ones_like(y_real_list_list)
-    #print('TEST y_real_list_list:', y_real_list_list)
-    #print('TEST y_predicted_list_list:', y_predicted_list_list)
     ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-    ### testing ###
-    #print('y_real, y_predicted')
-    #for i in range(len(y_real_list_list)):
-        #print(y_real_list_list[i],y_predicted_list_list[i])
-    ###############
     all_identical = 0
     for i in range(len(y_predicted_list_list)-1):
         if y_predicted_list_list[i] == y_predicted_list_list[i+1]: all_identical = all_identical+1
-    #print('TEST all_identical', all_identical)
     if all_identical == len(y_predicted_list_list)-1:
         r = np.float64(1.0)
-        #print('test, special r', r, type(r))
     else:
         r, _ = pearsonr(y_real_list_list, y_predicted_list_list)
-        #print('test, standard r', r, type(r))
     rms  = sqrt(mean_squared_error(y_real_list_list, y_predicted_list_list,sample_weight=weights))
     y_real_array=np.array(y_real_list_list)
     y_predicted_array=np.array(y_predicted_list_list)
@@ -832,10 +697,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_distances_array=np.array(kNN_distances)
         kNN_error_flat = [item for dummy in kNN_error for item in dummy]
         kNN_error_array=np.array(kNN_error_flat)
-        #print('kNN distances:')
-        #print(kNN_distances_array)
-        #print('kNN error:')
-        #print(kNN_error_array)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
     print('New', ML, 'call:')
@@ -851,14 +712,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 
 ### SVR kernel function
 def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
-    #print('TEST _x1')
-    #print(_x1)
-    #print(len(_x1))
-    #print(len(_x1[0]))
-    #print('TEST _x2')
-    #print(_x2)
-    #print(len(_x2))
-    #print(len(_x2[0]))
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
@@ -870,7 +723,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
     if CV=='groups': elec_descrip_total=elec_descrip_total-1
-    #print('elec_descrip_total', elec_descrip_total)
 
     ### K_el ###
     ini = 0
@@ -899,7 +751,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
             if k < len(elec_descrip)-1:
                 ini = elec_descrip[k]
                 fin = elec_descrip[k] + elec_descrip[k+1]
-
     ### K_fp_d ###
     if gamma_d != 0.0:
         # define Xi_fp_d
@@ -919,11 +770,8 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         Xjj_d = np.repeat(np.linalg.norm(Xj_fp_d, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
         T_d = np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T))
         #print('Tanimoto D')
-        #print(T_d)
         D_fp_d  = 1 - T_d
         D2_fp_d = np.square(D_fp_d)
-        #print('TEST donor:')
-        #print(D2_fp_d)
         K_fp_d = np.exp(-gamma_d*D2_fp_d)
     ### K_fp_a ###
     if gamma_a != 0.0:
@@ -931,13 +779,11 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         Xi_fp_a = [[] for j in range(size_matrix1)]
         for i in range(size_matrix1):
             for j in range(FP_length,2*FP_length):
-            #for j in range(FP_length):
                 Xi_fp_a[i].append(_x1[i][j+elec_descrip_total])
         Xi_fp_a = np.array(Xi_fp_a)
         # define Xj_fp_a
         Xj_fp_a = [[] for j in range(size_matrix2)]
         for i in range(size_matrix2):
-            #for j in range(FP_length):
             for j in range(FP_length,2*FP_length):
                 Xj_fp_a[i].append(_x2[i][j+elec_descrip_total])
         Xj_fp_a = np.array(Xj_fp_a)
@@ -945,19 +791,9 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         Xii_a = np.repeat(np.linalg.norm(Xi_fp_a, axis=1, keepdims=True)**2, size_matrix2, axis=1)
         Xjj_a = np.repeat(np.linalg.norm(Xj_fp_a, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
         T_a = np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T))
-        #print('Tanimoto A')
-        #print(T_a)
         D_fp_a  = 1 - T_a
         D2_fp_a = np.square(D_fp_a)
-        #print('TEST acceptor:')
-        #print(D2_fp_a)
         K_fp_a = np.exp(-gamma_a*D2_fp_a)
-        #print('test gp donor:')
-        #print(Xjj_d)
-        #print('test gp acceptor:')
-        #print(Xjj_a)
-        #if T_a.all() == T_d.all():
-            #print('TANIMOTO indeces are identical')
     # Calculate final kernel
     K = K * K_fp_d * K_fp_a
     #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
@@ -1227,7 +1063,7 @@ start = time()
 # Read input values
 all_rmse_values = []
 all_r_values = []
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column) = read_initial_values(input_file_name)
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
