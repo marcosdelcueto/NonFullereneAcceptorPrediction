@@ -306,6 +306,7 @@ def read_initial_values(inp):
     group_test = ast.literal_eval(var_value[var_name.index('group_test')])
     prediction_csv_file_name = ast.literal_eval(var_value[var_name.index('prediction_csv_file_name')])
     columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
+    predict_unknown = ast.literal_eval(var_value[var_name.index('predict_unknown')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -338,6 +339,7 @@ def read_initial_values(inp):
     print('xcols = ', xcols)
     print('ycols = ', ycols)
     print('FP_length = ', FP_length)
+    print('predict_unknown = ', predict_unknown)
     if prediction_csv_file_name != None:
         print('#######################################')
         print('####### Output prediction csv #########')
@@ -402,6 +404,7 @@ def read_initial_values(inp):
         f_out.write('xcols %s\n' % str(xcols))
         f_out.write('ycols %s\n' % str(ycols))
         f_out.write('FP_length %s\n' % str(FP_length))
+        f_out.write('predict_unknown %s\n' % str(predict_unknown))
         if prediction_csv_file_name != None:
             f_out.write('#######################################\n')
             f_out.write('####### Output prediction csv #########\n')
@@ -447,7 +450,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -708,6 +711,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     rms  = sqrt(mean_squared_error(y_real_list_list, y_predicted_list_list,sample_weight=weights))
     y_real_array=np.array(y_real_list_list)
     y_predicted_array=np.array(y_predicted_list_list)
+    print('TEST y_real_list_list',y_real_list_list)
+    print('TEST y_predicted_list_list',y_predicted_list_list)
+    print('TEST r', r, type(r))
     #######################################
     if prediction_csv_file_name != None:
         print('I am STARTING csv writing')
@@ -740,13 +746,16 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         kNN_error_array=np.array(kNN_error_flat)
         plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
+    if predict_unknown == True:
+        r=0.0
+        rms=0.0
     print('New', ML, 'call:')
     if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r.tolist(), 'rmse:',rms,flush=True)
+    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rmse:',rms,flush=True)
     if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
     if print_log==True: 
         f_out.write('New %s call: \n' %(ML))
-        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r.tolist(), rms))
+        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
         if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
         f_out.flush()
     return rms 
@@ -1104,7 +1113,7 @@ start = time()
 # Read input values
 all_rmse_values = []
 all_r_values = []
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv) = read_initial_values(input_file_name)
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
