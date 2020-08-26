@@ -679,7 +679,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         y_predicted.append(y_pred.tolist())
         y_real.append(y_test.tolist())
         if prediction_csv_file_name != None:
-            for i in test_index:
+            for i in range(Ndata-Nlast,Ndata):
                 test_indeces.append(i)
     # Put results in a 1D list
     y_real_list=[]
