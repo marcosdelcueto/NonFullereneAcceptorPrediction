@@ -284,16 +284,12 @@ def read_initial_values(inp):
     for i in range(number_elec_descrip):
         xcols.append(ast.literal_eval(var_value[var_name.index('xcols_elec'+str(i))]))              # specify which descriptors are used
         elec_descrip.append(len(xcols[i+1]))
-        #print('Test elec_descrip', elec_descrip)
-    #print('TEST BEFORE xcols:', xcols)
     # If we are using CV='groups', add temporarily the AcceptorLabel descriptor to identify each group
     if CV=='groups':
         for i in range(len(xcols)):
             if i==1:
                 xcols[1].insert(0, acceptor_label_column)
                 elec_descrip[0] = elec_descrip[0] +1 # account for the label descriptor
-    #print('TEST elec_descrip', elec_descrip)
-    #print('TEST AFTER xcols:', xcols)
     ycols = ast.literal_eval(var_value[var_name.index('ycols')])              # specify which is target property
     Ndata = ast.literal_eval(var_value[var_name.index('Ndata')])              # number of d/a pairs
     print_log = ast.literal_eval(var_value[var_name.index('print_log')])      # choose whether information is also written into a log file (Default: True)
@@ -308,6 +304,8 @@ def read_initial_values(inp):
     plot_kNN_distances = ast.literal_eval(var_value[var_name.index('plot_kNN_distances')])
     groups_acceptor_labels = ast.literal_eval(var_value[var_name.index('groups_acceptor_labels')])
     group_test = ast.literal_eval(var_value[var_name.index('group_test')])
+    prediction_csv_file_name = ast.literal_eval(var_value[var_name.index('prediction_csv_file_name')])
+    columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -340,6 +338,12 @@ def read_initial_values(inp):
     print('xcols = ', xcols)
     print('ycols = ', ycols)
     print('FP_length = ', FP_length)
+    if prediction_csv_file_name != None:
+        print('#######################################')
+        print('####### Output prediction csv #########')
+        print('#######################################')
+        print('prediction_csv_file_name',prediction_csv_file_name)
+        print('columns_labels_prediction_csv',columns_labels_prediction_csv)
     print('######################################')
     print('# Machine Learning Algorithm options #')
     print('######################################')
@@ -398,6 +402,12 @@ def read_initial_values(inp):
         f_out.write('xcols %s\n' % str(xcols))
         f_out.write('ycols %s\n' % str(ycols))
         f_out.write('FP_length %s\n' % str(FP_length))
+        if prediction_csv_file_name != None:
+            f_out.write('#######################################\n')
+            f_out.write('####### Output prediction csv #########\n')
+            f_out.write('#######################################\n')
+            f_out.write('prediction_csv_file_name %s\n' % str(prediction_csv_file_name))
+            f_out.write('columns_labels_prediction_csv %s\n' % str(columns_labels_prediction_csv))
         f_out.write('######################################\n')
         f_out.write('# Machine Learning Algorithm options #\n')
         f_out.write('######################################\n')
@@ -437,7 +447,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -475,7 +485,6 @@ def preprocess_fn(X):
         total_elec_descrip = 0
         for j in range(len(elec_descrip)):
             total_elec_descrip = total_elec_descrip + elec_descrip[j]
-        #print('TEST NEW *****: elec_descrip_total', total_elec_descrip)
         for i in range(Ndata):
             new_list = []
             new_list.append(save_X_el[i][0])
@@ -577,6 +586,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     progress_count = 1
     kNN_distances = []
     kNN_error = []
+    test_indeces=[]
     #################################################################
     # Do novel-group validation
     if CV == 'groups':
@@ -590,6 +600,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 X_test.append(new_X)
                 y_test.append(y[i].tolist())
                 counter = counter+1
+                if prediction_csv_file_name != None:
+                    test_indeces.append(i)
             else:
                 new_X = np.delete(X[i],0)
                 X_train.append(new_X)
@@ -648,6 +660,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             # add predicted values in this LOO to list with total
             y_predicted.append(y_pred.tolist())
             y_real.append(y_test.tolist())
+            if prediction_csv_file_name != None:
+                for i in test_index:
+                    test_indeces.append(i)
     elif CV =='last':
         X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
         # predict y values
@@ -663,6 +678,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         # add predicted values in this LOO to list with total
         y_predicted.append(y_pred.tolist())
         y_real.append(y_test.tolist())
+        if prediction_csv_file_name != None:
+            for i in test_index:
+                test_indeces.append(i)
     # Put results in a 1D list
     y_real_list=[]
     y_predicted_list=[]
@@ -690,6 +708,29 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     rms  = sqrt(mean_squared_error(y_real_list_list, y_predicted_list_list,sample_weight=weights))
     y_real_array=np.array(y_real_list_list)
     y_predicted_array=np.array(y_predicted_list_list)
+    #######################################
+    if prediction_csv_file_name != None:
+        print('I am STARTING csv writing')
+        #csv_file_name='prediction.csv'
+        #columns_prediction_csv=['PCE']
+        #columns_prediction_csv=[]
+        df=pd.read_csv(db_file,index_col=0)
+        counter_i = 0
+        data=[]
+        for i in test_indeces:
+            df2 = df.loc[i]
+            value=[]
+            for j in columns_labels_prediction_csv:
+                value.append(df2[j])
+                #print(i,j,value[-1])
+            #print(i,value,y_real_array[counter_i],y_predicted_array[counter_i])
+            data_row=[i,value,y_real_array[counter_i],y_predicted_array[counter_i]]
+            data.append(data_row)
+            output_df = pd.DataFrame(data,columns=['Index','Labels','Real_target','Predicted_target'])
+            output_df.to_csv (prediction_csv_file_name, index = False, header=True)
+            counter_i = counter_i+1
+        print('I am ENDING csv writing')
+    #######################################
     # Print plots
     if plot_target_predictions != None: 
         plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
@@ -1063,7 +1104,7 @@ start = time()
 # Read input values
 all_rmse_values = []
 all_r_values = []
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast) = read_initial_values(input_file_name)
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
