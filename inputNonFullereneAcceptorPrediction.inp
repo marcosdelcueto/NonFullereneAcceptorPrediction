@@ -46,7 +46,7 @@ CV = 'groups'                         # select 'loo' or 'kf' or 'groups' or 'las
 kfold = 10                             # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
-groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[7,17,26]]
+groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[17,26]]
 group_test = 5                        # group chosen as test group. Note that groups start at 0, 1, 2, 3, 4...
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
