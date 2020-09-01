@@ -711,15 +711,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     rms  = sqrt(mean_squared_error(y_real_list_list, y_predicted_list_list,sample_weight=weights))
     y_real_array=np.array(y_real_list_list)
     y_predicted_array=np.array(y_predicted_list_list)
-    print('TEST y_real_list_list',y_real_list_list)
-    print('TEST y_predicted_list_list',y_predicted_list_list)
-    print('TEST r', r, type(r))
     #######################################
     if prediction_csv_file_name != None:
-        print('I am STARTING csv writing')
-        #csv_file_name='prediction.csv'
-        #columns_prediction_csv=['PCE']
-        #columns_prediction_csv=[]
         df=pd.read_csv(db_file,index_col=0)
         counter_i = 0
         data=[]
@@ -728,14 +721,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             value=[]
             for j in columns_labels_prediction_csv:
                 value.append(df2[j])
-                #print(i,j,value[-1])
-            #print(i,value,y_real_array[counter_i],y_predicted_array[counter_i])
             data_row=[i,value,y_real_array[counter_i],y_predicted_array[counter_i]]
             data.append(data_row)
             output_df = pd.DataFrame(data,columns=['Index','Labels','Real_target','Predicted_target'])
             output_df.to_csv (prediction_csv_file_name, index = False, header=True)
             counter_i = counter_i+1
-        print('I am ENDING csv writing')
     #######################################
     # Print plots
     if plot_target_predictions != None: 
