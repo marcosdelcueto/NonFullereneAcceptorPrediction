@@ -49,8 +49,8 @@ group_test = 5                        # group chosen as test group. Note that gr
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
 gamma_el = [0.0]		  					  # aka gamma_1. Hyperparameters with weights of d_el
-gamma_d  = 0.090950         		  # aka gamma_2. hyperparameter with weight of d_fp_d
-gamma_a  = 1.368717   	    		  # aka gamma_3. Hyperparameter with weight of d_fp_a
+gamma_d  =  0.098870        		     # aka gamma_2. hyperparameter with weight of d_fp_d
+gamma_a  = 1.363281   	    		     # aka gamma_3. Hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,0.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -59,7 +59,7 @@ weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Def
 Neighbors = [6] 							  # number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
-alpha = 0.0443882                     # kernel hyperparameter
+alpha = 0.043829736646987014          # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
 C = 0.11936879110802057               # regularization hyperparameter
