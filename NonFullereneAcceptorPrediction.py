@@ -741,11 +741,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         rms=0.0
     print('New', ML, 'call:')
     if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rmse:',rms,flush=True)
+    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
     if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
     if print_log==True: 
         f_out.write('New %s call: \n' %(ML))
-        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, rms))
         if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
         f_out.flush()
     return rms 

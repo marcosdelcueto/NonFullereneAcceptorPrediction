@@ -11,15 +11,13 @@ Options for this novel-group validation are controlled in input file:
 
 ---
 
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 The necessary packages (with the tested versions with Python 3.8.5) are specified in the file requirements.txt. These packages can be installed with pip:
 ```
 pip3 install -r requirements.txt
 ```
 
-### Usage
+## Usage
 All input parameters are specified in file: **inputNonFullereneAcceptorPrediction.inp**. Input options in this file are separated in different groups:
 
 - **Parallelization**: only relevant when trying to use differential evolution algorithm to optimize hyperparameters
@@ -34,8 +32,17 @@ To execute program, make sure that you have all necessary python packages instal
 ./MLPhotovoltaics.py
 ```
 
-### Example inputs
+## Example inputs
+The rmse values with different validation and descriptors, shown in Table 1 of the manuscript, can be reproduced using the hyperparameters shown in Table S3 and Table S4 of the Supporting Information.
 
+We provide example inputs for kNN and KRR to calculate the rmse with leave-one-out (loo) cross-validation and novel-group validation for Group 5 and Group 6, in the directories:
+
+- kNN_loo
+- kNN_group5
+- kNN_group6
+- KRR_loo
+- KRR_group5
+- KRR_group6
 
 ---
 
