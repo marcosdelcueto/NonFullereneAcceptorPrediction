@@ -29,7 +29,7 @@ All input parameters are specified in file: **inputNonFullereneAcceptorPredictio
 To execute program, make sure that you have all necessary python packages installed, and that all necessary files are present: the database (**database.csv**), input file (**inputNonFullereneAcceptorPrediction.inp**) and program (**NonFullereneAcceptorPrediction.py**). Finally, simply run:
 
 ```
-./MLPhotovoltaics.py
+./NonFullereneAcceptorPrediction.py
 ```
 
 ## Example inputs
