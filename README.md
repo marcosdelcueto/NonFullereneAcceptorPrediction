@@ -32,28 +32,6 @@ To execute program, make sure that you have all necessary python packages instal
 ./NonFullereneAcceptorPrediction.py
 ```
 
-## Example inputs
-
-### Table 1
-The rmse values with different validation and descriptors, shown in Table 1 of the manuscript, can be reproduced using the hyperparameters shown in Table S3 and Table S4 of the Supporting Information.
-
-We provide example inputs for kNN and KRR to calculate the rmse with leave-one-out (loo) cross-validation and novel-group validation for Group 5 and Group 6, in the directories:
-
-- kNN_loo
-- kNN_group5
-- kNN_group6
-- KRR_loo
-- KRR_group5
-- KRR_group6
-
-### Figure 2
-Results in Figure 2 correspond to specific values from Table 1, and we include example inputs to reproduce these values in the directories:
-
-- Fig2A
-- Fig2B
-- Fig2C
-
-
 ---
 
 ### Contributors
