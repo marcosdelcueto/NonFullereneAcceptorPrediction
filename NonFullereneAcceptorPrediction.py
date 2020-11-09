@@ -606,8 +606,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
+        sizes = [0,7,4,5,4,25,20]
         if final_call == False:
             rms_total = 0
+            error_logo = 0.0
             for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0 . UNCOMMENT THIS LINE
             #for m in range(1,4): # Note: we're ignoring group 0  . THIS LINE JUST FOR TESTING AND MAKE IT FASTER
                 y_real = []
@@ -615,6 +617,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 print('############')
                 print('MAIN M GROUP', m)
                 print('############')
+                new_rms = 0.0
                 for n in range(1,len(groups_acceptor_labels)): # UNCOMMENT THIS LINE
                 #for n in range(1,4): # THIS LINE JUST FOR TESTING AND MAKE IT FASTER
                     if m != n:
@@ -642,11 +645,33 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                         # add predicted values in this LOO to list with total
                         y_predicted.append(y_pred.tolist())
                         y_real.append(y_test)
+                        partial_rms = sqrt(mean_squared_error(y_test,y_pred.tolist()))
+                        new_rms = new_rms + partial_rms
+                        print('partial_rms:', partial_rms)
+                        #########################################
+                        y_pred = [item for sublist in y_pred.tolist() for item in sublist]
+                        y_test = [item for sublist in y_test for item in sublist]
+                        logo_weight_A = 1.0          ### Weight A
+                        logo_weight_B = 1/((len(sizes)-2)*sizes[n]) ### Weight B
+                        sum_sizes_n = 0
+                        for i in range(len(sizes)):
+                            if i != m: sum_sizes_n = sum_sizes_n + sizes[i]
+                        print('sum_sizes_n', sum_sizes_n)
+                        logo_weight_C = 1/(sum_sizes_n) ### Weight C
+                        print('logo_weights A, B, C:', logo_weight_A, logo_weight_B, logo_weight_C)
+                        logo_weight = logo_weight_A
+                        error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+                        print('y_pred:', y_pred)
+                        print('y_test',y_test)
+                        print('error_logo',error_logo)
+                        #########################################
+                print('new_rms:', new_rms, new_rms/5)
                 # Put results in a 1D list
                 y_real = [item for dummy in y_real for item in dummy ]
                 y_predicted = [item for dummy in y_predicted for item in dummy ]
                 y_real = [item for dummy in y_real for item in dummy ]
                 y_predicted = [item for dummy in y_predicted for item in dummy ]
+                print('#### TEST1 ####:', len(y_real))
                 print('y_real:', y_real)
                 print('y_predicted:', y_predicted)
                 # Calculate rmse and r
@@ -657,18 +682,20 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 elif weight_RMSE == 'linear':
                     weights = np.ones_like(y_real)
                 ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-                all_identical = 0
-                for i in range(len(y_predicted)-1):
-                    if y_predicted[i] == y_predicted[i+1]: all_identical = all_identical+1
-                if all_identical == len(y_predicted)-1:
-                    r = np.float64(1.0)
-                else:
-                    r, _ = pearsonr(y_real, y_predicted)
+                #all_identical = 0
+                #for i in range(len(y_predicted)-1):
+                    #if y_predicted[i] == y_predicted[i+1]: all_identical = all_identical+1
+                #if all_identical == len(y_predicted)-1:
+                    #r = np.float64(1.0)
+                #else:
+                    #r, _ = pearsonr(y_real, y_predicted)
+                r, _ = pearsonr(y_real, y_predicted)
                 rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-                rms_total = rms_total + rms
+                #print('TEST rmse, size:', rms, sizes[m])
+                rms_total = rms_total + rms*sizes[m]
                 y_real_array=np.array(y_real)
                 y_predicted_array=np.array(y_predicted)
-                print('TEST m=%i, rmse=%f' %(m, rms))
+                #print('TEST m=%i, rmse=%f' %(m, rms))
             rms = rms_total
             print('TOTAL rmse:', rms)
             print('New', ML, 'call:')
@@ -680,6 +707,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
+        ###########################################
+        rms = error_logo
+        print('FINAL LOGO ERROR:', rms)
+        ###########################################
         if final_call == True:
             y_real = []
             y_predicted = []
@@ -689,6 +720,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 X_train = []
                 y_train = []
                 print('TEST m', m)
+                counter1=0
+                counter2=0
                 for i in range(len(X)):
                     if X[i][0] in groups_acceptor_labels[m]:
                         new_X = np.delete(X[i],0)
@@ -697,11 +730,30 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                         counter = counter+1
                         if prediction_csv_file_name != None:
                             test_indeces.append(i)
+                        counter1=counter1+1
                     else:
                         new_X = np.delete(X[i],0)
                         X_train.append(new_X)
                         y_train.append(y[i])
-                y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+                        counter2=counter2+1
+                print('TEST counter1: %i, counter2: %i' %(counter1, counter2))
+                print('TEST sizes:', len(X_train), len(X_test))
+                #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+                stime = time()
+                print('X_train:')
+                #print(X_train)
+                print('len(X_train)',len(X_train))
+                print('y_train:')
+                #print(y_train)
+                print('len(y_train)',len(y_train))
+                ML_algorithm.fit(X_train, y_train)
+                print("Time for KRR fitting: %.3f" % (time() - stime))
+                stime = time()
+                print('X_test:')
+                #print(X_test)
+                print('len(X_test)',len(X_test))
+                y_pred = ML_algorithm.predict(X_test)
+                print("Time for GPR prediction: %.3f" % (time() - stime))
                 y_predicted.append(y_pred.tolist())
                 y_real.append(y_test)
             # Put results in a 1D list
@@ -711,6 +763,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_predicted = [item for dummy in y_predicted for item in dummy ]
             print('y_real:', y_real)
             print('y_predicted:', y_predicted)
+            # Plot predictions
+            y_real_array=np.array(y_real)
+            y_predicted_array=np.array(y_predicted)
+            if plot_target_predictions != None: 
+                plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
             # Calculate rmse and r
             if weight_RMSE == 'PCE2':
                 weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
@@ -775,6 +832,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 # add predicted values in this LOO to list with total
                 y_predicted.append(y_pred.tolist())
                 y_real.append(y_test)
+                y_real_array=np.array(y_real)
+                y_predicted_array=np.array(y_predicted)
+                if plot_target_predictions != None: 
+                    plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
             elif final_call == False:
                 ###################################################
                 # For novel-group validation, we need to minimize RMSE of validation group within Train
@@ -1145,8 +1206,12 @@ def plot_scatter(x, y, plot_type, plot_name):
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
     r, _ = pearsonr(x, y)
+    rmse  = sqrt(mean_squared_error(x,y))
     #rho, _ = spearmanr(x, y)
+    print('TEST', x, y)
     ma = np.max([x.max(), y.max()]) + 1
+    mi = y.min() - 1
+    print('ma, mi:', ma, mi)
     ax = plt.subplot(gs[0])
     ax.scatter(x, y, color="b")
     ax.tick_params(axis='both', which='major', direction='in', labelsize=20, pad=10, length=5)
@@ -1169,14 +1234,17 @@ def plot_scatter(x, y, plot_type, plot_name):
         ax.set_ylabel(r'PCE$^{%s}$ / %s' %(ML,"%"), size=24, labelpad=10)
         #ax.set_xlim(0, ma)
         #ax.set_ylim(0, ma)
-        #ax.set_aspect('equal')
-        #ax.plot(np.arange(0, ma + 0.1, 0.1), np.arange(0, ma + 0.1, 0.1), color="k", ls="--")
+        ax.set_xlim(mi, ma)
+        ax.set_ylim(mi, ma)
+        ax.set_aspect('equal')
+        ax.plot(np.arange(0, ma + 0.1, 0.1), np.arange(0, ma + 0.1, 0.1), color="k", ls="--")
 
         m, b = np.polyfit(x, y, 1)
-        ax.plot(x, m*x + b,color="k")
+        ax.plot(x, m*x + b,color="k",linewidth=3)
         print('m:', m, 'b:', b)
 
-        ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=20)
+        ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=18)
+        ax.annotate(u'$rmse$ = %.2f' % rmse, xy=(0.15,0.75), xycoords='axes fraction', size=18)
     # options for plot_kNN_distances
     elif plot_type == 'plot_kNN_distances':
         ax.set_xlabel(r"Distance", size=24, labelpad=10)
@@ -1196,6 +1264,16 @@ def plot_scatter(x, y, plot_type, plot_name):
     # save plot into corresponding file
     plt.savefig(plot_name,dpi=600,bbox_inches='tight')
     return
+
+### ###
+def squared_error(x1,x2):
+    if len(x1) != len(x2): # sanity check
+        print('ERROR: length of predicted and real values does not have the same length')
+        sys.exit()
+    sq_error = 0.0
+    for i in range(len(x1)):
+        sq_error = sq_error + (x1[i]-x2[i])**2
+    return sq_error
 
 #### Function to get FP from smiles (not used) ###
 #def preprocess_smiles(X):
