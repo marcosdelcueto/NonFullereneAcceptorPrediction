@@ -319,6 +319,7 @@ def read_initial_values(inp):
     prediction_csv_file_name = ast.literal_eval(var_value[var_name.index('prediction_csv_file_name')])
     columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
     predict_unknown = ast.literal_eval(var_value[var_name.index('predict_unknown')])
+    logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -371,6 +372,7 @@ def read_initial_values(inp):
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
+        print('logo_error_type =', logo_error_type)
     print('### General hyperparameters ##########')
     print('optimize_hyperparams = ', optimize_hyperparams)
     print('gamma_el = ', gamma_el)
@@ -437,6 +439,7 @@ def read_initial_values(inp):
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
+            f_out.write('logo_error_type %s\n' % str(logo_error_type))
         f_out.write('### General hyperparameters ##########\n')
         f_out.write('optimize_hyperparams %s\n' % str(optimize_hyperparams))
         f_out.write('gamma_el %s\n' % str(gamma_el))
@@ -462,7 +465,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type)
 
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
@@ -607,6 +610,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
         sizes = [0,7,4,5,4,25,20]
+        total_N = 0
+        for i in sizes:
+            total_N = total_N + i
+        #print('TEST total_N:', total_N)
         if final_call == False:
             rms_total = 0
             error_logo = 0.0
@@ -617,7 +624,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 print('############')
                 print('MAIN M GROUP', m)
                 print('############')
-                new_rms = 0.0
+                #new_rms = 0.0
                 for n in range(1,len(groups_acceptor_labels)): # UNCOMMENT THIS LINE
                 #for n in range(1,4): # THIS LINE JUST FOR TESTING AND MAKE IT FASTER
                     if m != n:
@@ -625,7 +632,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                         y_test = []
                         X_train = []
                         y_train = []
-                        print('TEST n', n)
+                        print('##### Sub n=%i group' %n)
                         for i in range(len(X)):
                             if X[i][0] in groups_acceptor_labels[n]:
                                 new_X = np.delete(X[i],0)
@@ -645,33 +652,36 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                         # add predicted values in this LOO to list with total
                         y_predicted.append(y_pred.tolist())
                         y_real.append(y_test)
-                        partial_rms = sqrt(mean_squared_error(y_test,y_pred.tolist()))
-                        new_rms = new_rms + partial_rms
-                        print('partial_rms:', partial_rms)
+                        #partial_rms = sqrt(mean_squared_error(y_test,y_pred.tolist()))
+                        #new_rms = new_rms + partial_rms
+                        #print('partial_rms:', partial_rms)
                         #########################################
                         y_pred = [item for sublist in y_pred.tolist() for item in sublist]
                         y_test = [item for sublist in y_test for item in sublist]
-                        logo_weight_A = 1.0          ### Weight A
-                        logo_weight_B = 1/((len(sizes)-2)*sizes[n]) ### Weight B
-                        sum_sizes_n = 0
-                        for i in range(len(sizes)):
-                            if i != m: sum_sizes_n = sum_sizes_n + sizes[i]
-                        print('sum_sizes_n', sum_sizes_n)
-                        logo_weight_C = 1/(sum_sizes_n) ### Weight C
-                        print('logo_weights A, B, C:', logo_weight_A, logo_weight_B, logo_weight_C)
-                        logo_weight = logo_weight_A
+                        if logo_error_type == 'A':  ### Weight A
+                            logo_weight = 1.0
+                        elif logo_error_type == 'B':  ### Weight B
+                            logo_weight = 1/((len(sizes)-2)*sizes[n])
+                        elif logo_error_type == 'C': ### Weight C
+                            sum_sizes_n = 0
+                            for i in range(len(sizes)):
+                                if i != m: sum_sizes_n = sum_sizes_n + sizes[i]
+                            #print('sum_sizes_n', sum_sizes_n)
+                            logo_weight = 1/(sum_sizes_n)
+                        print('logo_weight:', logo_weight)
                         error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
                         print('y_pred:', y_pred)
                         print('y_test',y_test)
-                        print('error_logo',error_logo)
+                        print('Error logo',error_logo)
                         #########################################
-                print('new_rms:', new_rms, new_rms/5)
+                print('####################################')
+                #print('new_rms:', new_rms, new_rms/5)
                 # Put results in a 1D list
                 y_real = [item for dummy in y_real for item in dummy ]
                 y_predicted = [item for dummy in y_predicted for item in dummy ]
                 y_real = [item for dummy in y_real for item in dummy ]
                 y_predicted = [item for dummy in y_predicted for item in dummy ]
-                print('#### TEST1 ####:', len(y_real))
+                #print('#### TEST1 ####:', len(y_real))
                 print('y_real:', y_real)
                 print('y_predicted:', y_predicted)
                 # Calculate rmse and r
@@ -689,37 +699,43 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                     #r = np.float64(1.0)
                 #else:
                     #r, _ = pearsonr(y_real, y_predicted)
-                r, _ = pearsonr(y_real, y_predicted)
-                rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
+                #r, _ = pearsonr(y_real, y_predicted)
+                #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
                 #print('TEST rmse, size:', rms, sizes[m])
-                rms_total = rms_total + rms*sizes[m]
-                y_real_array=np.array(y_real)
-                y_predicted_array=np.array(y_predicted)
+                #rms_total = rms_total + rms*sizes[m]
+                #y_real_array=np.array(y_real)
+                #y_predicted_array=np.array(y_predicted)
                 #print('TEST m=%i, rmse=%f' %(m, rms))
-            rms = rms_total
-            print('TOTAL rmse:', rms)
+            #rms = rms_total
+            #print('TOTAL rmse:', rms)
+            ###########################################
+            rms = error_logo
+            print('FINAL LOGO ERROR:', rms)
+            print('####################################')
+            ###########################################
             print('New', ML, 'call:')
             if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
             if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
             if print_log==True: 
                 f_out.write('New %s call: \n' %(ML))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+                #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, rms))
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
-        ###########################################
-        rms = error_logo
-        print('FINAL LOGO ERROR:', rms)
-        ###########################################
         if final_call == True:
             y_real = []
             y_predicted = []
+            error_logo = 0.0
             for m in range(1,len(groups_acceptor_labels)):
                 X_test = []
                 y_test = []
                 X_train = []
                 y_train = []
-                print('TEST m', m)
+                print('############')
+                print('MAIN M GROUP', m)
+                print('############')
                 counter1=0
                 counter2=0
                 for i in range(len(X)):
@@ -736,26 +752,43 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                         X_train.append(new_X)
                         y_train.append(y[i])
                         counter2=counter2+1
-                print('TEST counter1: %i, counter2: %i' %(counter1, counter2))
-                print('TEST sizes:', len(X_train), len(X_test))
+                #print('TEST counter1: %i, counter2: %i' %(counter1, counter2))
+                print('Train/Test sizes:', len(X_train), len(X_test))
                 #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
                 stime = time()
-                print('X_train:')
+                #print('X_train:')
                 #print(X_train)
-                print('len(X_train)',len(X_train))
-                print('y_train:')
+                #print('len(X_train)',len(X_train))
+                #print('y_train:')
                 #print(y_train)
-                print('len(y_train)',len(y_train))
+                #print('len(y_train)',len(y_train))
                 ML_algorithm.fit(X_train, y_train)
                 print("Time for KRR fitting: %.3f" % (time() - stime))
                 stime = time()
-                print('X_test:')
+                #print('X_test:')
                 #print(X_test)
-                print('len(X_test)',len(X_test))
+                #print('len(X_test)',len(X_test))
                 y_pred = ML_algorithm.predict(X_test)
                 print("Time for GPR prediction: %.3f" % (time() - stime))
                 y_predicted.append(y_pred.tolist())
                 y_real.append(y_test)
+                #########################################
+                y_pred = [item for sublist in y_pred.tolist() for item in sublist]
+                y_test = [item for sublist in y_test for item in sublist]
+                if logo_error_type == 'A':  ### Weight A
+                    logo_weight = 1.0
+                elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
+                    logo_weight = 1/((len(sizes)-1)*sizes[m])
+                error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+                print('y_pred:', y_pred)
+                print('y_test',y_test)
+                print('error_logo',error_logo)
+                #########################################
+            print('FINAL LOGO ERROR:', error_logo)
+            if logo_error_type == 'A': rms = math.sqrt(error_logo/total_N)
+            if logo_error_type == 'B' or logo_error_type == 'C': rms = math.sqrt(error_logo)
+            print('FINAL LOGO RMSE:', rms)
+            print('####################################')
             # Put results in a 1D list
             y_real = [item for dummy in y_real for item in dummy ]
             y_predicted = [item for dummy in y_predicted for item in dummy ]
@@ -776,18 +809,20 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             elif weight_RMSE == 'linear':
                 weights = np.ones_like(y_real)
             ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-            r, _ = pearsonr(y_real, y_predicted)
-            rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-            y_real_array=np.array(y_real)
-            y_predicted_array=np.array(y_predicted)
-            print('TEST m=%i, r=%f, rmse=%f' %(m, r, rms))
+            #r, _ = pearsonr(y_real, y_predicted)
+            #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
+            #y_real_array=np.array(y_real)
+            #y_predicted_array=np.array(y_predicted)
+            #print('TEST m=%i, r=%f, rmse=%f' %(m, r, rms))
             print('Final', ML, 'call:')
             if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
             if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
             if print_log==True: 
                 f_out.write('New %s call: \n' %(ML))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+                #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, rms))
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
     #################################################################
@@ -1208,10 +1243,10 @@ def plot_scatter(x, y, plot_type, plot_name):
     r, _ = pearsonr(x, y)
     rmse  = sqrt(mean_squared_error(x,y))
     #rho, _ = spearmanr(x, y)
-    print('TEST', x, y)
+    #print('TEST', x, y)
     ma = np.max([x.max(), y.max()]) + 1
     mi = y.min() - 1
-    print('ma, mi:', ma, mi)
+    #print('ma, mi:', ma, mi)
     ax = plt.subplot(gs[0])
     ax.scatter(x, y, color="b")
     ax.tick_params(axis='both', which='major', direction='in', labelsize=20, pad=10, length=5)
@@ -1367,7 +1402,7 @@ start = time()
 # Read input values
 all_rmse_values = []
 all_r_values = []
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown) = read_initial_values(input_file_name)
+(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type) = read_initial_values(input_file_name)
 # Execute main function
 main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
 # Print running time and close log file
