@@ -50,10 +50,10 @@ groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[23,31,32],[7,
 group_test = 5                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
 logo_error_type = 'A'                 # only used if CV='logo'. POssible types: 'A', 'B' or 'C'
 ### General hyperparameters ###########
-optimize_hyperparams = True   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.0]	  # hyperparameters with weights of d_el
-gamma_d  =  2.803682       			  # hyperparameter with weight of d_fp_d
-gamma_a  =  0.453367  	  				  # hyperparameter with weight of d_fp_a
+optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
+gamma_el = [0.011839833392117693]	  # hyperparameters with weights of d_el
+gamma_d  =  0.052516       			  # hyperparameter with weight of d_fp_d
+gamma_a  =  0.003013  	  				  # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -62,7 +62,7 @@ weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Def
 Neighbors = [1] 							  # number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
-alpha = 0.638214232218038          # kernel hyperparameter
+alpha = 1.3513915691360507          # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
 C = 0.11936879110802057               # regularization hyperparameter

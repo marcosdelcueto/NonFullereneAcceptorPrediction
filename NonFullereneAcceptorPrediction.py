@@ -809,15 +809,15 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             elif weight_RMSE == 'linear':
                 weights = np.ones_like(y_real)
             ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-            #r, _ = pearsonr(y_real, y_predicted)
+            r, _ = pearsonr(y_real, y_predicted)
             #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
             #y_real_array=np.array(y_real)
             #y_predicted_array=np.array(y_predicted)
             #print('TEST m=%i, r=%f, rmse=%f' %(m, r, rms))
             print('Final', ML, 'call:')
             if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
+            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
             if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
             if print_log==True: 
                 f_out.write('New %s call: \n' %(ML))
