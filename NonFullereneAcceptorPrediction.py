@@ -609,7 +609,16 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
-        sizes = [0,7,4,5,4,25,20]
+        #sizes = [0,7,4,5,4,25,20]
+        sizes = []
+        for j in groups_acceptor_labels:
+            group_size=0
+            for i in range(len(X)):
+                if X[i][0] in j:
+                    group_size=group_size+1
+            print('TEST:', j, group_size)
+            sizes.append(group_size)
+        print('TEST FINAL sizes', sizes)
         total_N = 0
         for i in sizes:
             total_N = total_N + i
