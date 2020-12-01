@@ -618,12 +618,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                     group_size=group_size+1
             #print('TEST:', j, group_size)
             sizes.append(group_size)
-        print('TEST FINAL sizes', sizes)
+        #print('TEST FINAL sizes', sizes)
         total_N = 0
         for i in sizes:
             total_N = total_N + i
         total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
-        print('TEST total_N:', total_N)
+        #print('TEST total_N:', total_N)
         if final_call == False:
             rms_total = 0
             error_logo = 0.0
@@ -792,8 +792,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 y_predicted.append(y_pred.tolist())
                 y_real.append(y_test)
                 #########################################
-                print('TEST y_pred:', y_pred)
-                print('TEST y_test:', y_test)
+                #print('TEST y_pred:', y_pred)
+                #print('TEST y_test:', y_test)
                 #if len(y_pred) > 1: y_pred = [item for sublist in y_pred.tolist() for item in sublist]
                 y_test = [item for sublist in y_test for item in sublist]
                 if logo_error_type == 'A':  ### Weight A
@@ -821,8 +821,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             #if ML != 'SVR': y_predicted = [item for dummy in y_predicted for item in dummy ]
             print('y_real:', y_real)
             print('y_predicted:', y_predicted)
-            print('TEST len(y_real)', len(y_real))
-            print('TEST len(y_predicted)', len(y_predicted))
+            #print('TEST len(y_real)', len(y_real))
+            #print('TEST len(y_predicted)', len(y_predicted))
             # Plot predictions
             y_real_array=np.array(y_real)
             y_predicted_array=np.array(y_predicted)
