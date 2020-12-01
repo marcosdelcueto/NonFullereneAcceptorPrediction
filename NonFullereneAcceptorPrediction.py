@@ -616,9 +616,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             for i in range(len(X)):
                 if X[i][0] in j:
                     group_size=group_size+1
-            print('TEST:', j, group_size)
+            #print('TEST:', j, group_size)
             sizes.append(group_size)
-        print('TEST FINAL sizes', sizes)
+        #print('TEST FINAL sizes', sizes)
         total_N = 0
         for i in sizes:
             total_N = total_N + i
@@ -734,6 +734,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
         if final_call == True:
+            print('X:')
+            print(X)
+            print('y:')
+            print(y)
             y_real = []
             y_predicted = []
             error_logo = 0.0
@@ -748,6 +752,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 counter1=0
                 counter2=0
                 for i in range(len(X)):
+                    #print('TEST where is warning', i)
                     if X[i][0] in groups_acceptor_labels[m]:
                         new_X = np.delete(X[i],0)
                         X_test.append(new_X)
@@ -757,6 +762,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                             test_indeces.append(i)
                         counter1=counter1+1
                     else:
+                        #print('train: X[i]', X[i])
                         new_X = np.delete(X[i],0)
                         X_train.append(new_X)
                         y_train.append(y[i])
@@ -765,13 +771,16 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 print('Train/Test sizes:', len(X_train), len(X_test))
                 #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
                 stime = time()
-                #print('X_train:')
+                print('X_train:')
                 #print(X_train)
-                #print('len(X_train)',len(X_train))
-                #print('y_train:')
+                print('len(X_train)',len(X_train))
+                print('y_train:')
                 #print(y_train)
-                #print('len(y_train)',len(y_train))
-                ML_algorithm.fit(X_train, y_train)
+                print('len(y_train)',len(y_train))
+                X_train=np.array(X_train)
+                y_train=np.array(y_train)
+                #ML_algorithm.fit(X_train, y_train) ### THIS WORKS with KRR
+                ML_algorithm.fit(X_train, y_train.ravel())
                 print("Time for KRR fitting: %.3f" % (time() - stime))
                 stime = time()
                 #print('X_test:')
@@ -782,7 +791,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 y_predicted.append(y_pred.tolist())
                 y_real.append(y_test)
                 #########################################
-                y_pred = [item for sublist in y_pred.tolist() for item in sublist]
+                #print('TEST y_pred:', y_pred)
+                #print('TEST y_test:', y_test)
+                if len(y_pred) > 1: y_pred = [item for sublist in y_pred.tolist() for item in sublist]
                 y_test = [item for sublist in y_test for item in sublist]
                 if logo_error_type == 'A':  ### Weight A
                     logo_weight = 1.0
@@ -799,10 +810,14 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             print('FINAL LOGO RMSE:', rms)
             print('####################################')
             # Put results in a 1D list
+            #print('TEST y_real:', y_real)
+            #print('TEST y_predicted:', y_predicted)
             y_real = [item for dummy in y_real for item in dummy ]
             y_predicted = [item for dummy in y_predicted for item in dummy ]
+            #print('TEST y_real:', y_real)
+            #print('TEST y_predicted:', y_predicted)
             y_real = [item for dummy in y_real for item in dummy ]
-            y_predicted = [item for dummy in y_predicted for item in dummy ]
+            #if ML != 'SVR': y_predicted = [item for dummy in y_predicted for item in dummy ]
             print('y_real:', y_real)
             print('y_predicted:', y_predicted)
             # Plot predictions
@@ -852,7 +867,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                     counter = counter+1
                     if prediction_csv_file_name != None:
                         test_indeces.append(i)
-                    print ('TEST:', X[i][0])
+                    #print ('TEST:', X[i][0])
                 else:
                     new_X = np.delete(X[i],0)
                     X_train.append(new_X)
@@ -1020,7 +1035,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 
 ### SVR kernel function
 def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
-    # WARNING: FUNCTION WOULD NEED UPDATING FOR CV='groups' and 'logo' [1-OFF ERROR]
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
@@ -1031,11 +1045,14 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     elec_descrip_total=0
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
-    if CV=='groups': elec_descrip_total=elec_descrip_total-1
+    if CV=='groups' or CV=='logo': elec_descrip_total=elec_descrip_total-1
+    #print('START TEST kernel_SVR:')
+    #print(_x1)
+    #print('size_matrix1',size_matrix1)
+    #print('size_matrix2',size_matrix2)
+    #print('elec_descrip_total',elec_descrip_total)
 
     ### K_el ###
-    ini = 0
-    fin = elec_descrip[0]
     K = 1.0
     for k in range(len(elec_descrip)):
         K_el.append(1.0)
@@ -1052,14 +1069,13 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
                 for j in range(elec_descrip[k]):
                     Xj_el[i].append(_x2[i][j])
             Xj_el = np.array(Xj_el)
+            print('Xi_el', Xi_el)
+            print('Xj_el', Xj_el)
             # calculate K_el
             D_el  = euclidean_distances(Xi_el, Xj_el)
             D2_el = np.square(D_el)
             K_el[k] = np.exp(-gamma_el[k]*D2_el)
             K = K * K_el[k]
-            if k < len(elec_descrip)-1:
-                ini = elec_descrip[k]
-                fin = elec_descrip[k] + elec_descrip[k+1]
     ### K_fp_d ###
     if gamma_d != 0.0:
         # define Xi_fp_d
@@ -1160,8 +1176,15 @@ def tanimoto_kernel(Xi, Xj, gamma):
         Kernel matrix.
     '''
 
+
     m1 = Xi.shape[0]
     m2 = Xj.shape[0]
+    #print('Inside Tanimoto kernel:')
+    #print('Xi:', Xi, 'length:', len(Xi[0]))
+    #print('Xj:', Xj, 'length:', len(Xj[0]))
+    #print('gamma:', gamma)
+    #print('m1',m1)
+    #print('m2',m2)
     Xii = np.repeat(np.linalg.norm(Xi, axis=1, keepdims=True)**2, m2, axis=1)
     Xjj = np.repeat(np.linalg.norm(Xj, axis=1, keepdims=True).T**2, m1, axis=0)
     T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
@@ -1207,7 +1230,7 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         elec_descrip_total=0
         for k in elec_descrip:
             elec_descrip_total=elec_descrip_total+k
-        if CV=='groups': elec_descrip_total=elec_descrip_total-1
+        if CV=='groups' or CV=='logo': elec_descrip_total=elec_descrip_total-1
         ndesp1 = elec_descrip_total + FP_length
 
         # Calculate electronic kernel
@@ -1215,15 +1238,23 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         Xj_el = []
         K_el = []
         ini = 0
-        if CV=='groups':
+        if CV=='groups' or CV=='logo':
             fin = elec_descrip[0]-1
         else:
             fin = elec_descrip[0]
+        #print('################')
+        #print('TEST kernel KRR:')
+        #print('elec_descrip_total',elec_descrip_total)
+        #print('fin',fin)
+        #print('################')
         K = 1.0
         for i in range(len(elec_descrip)):
             Xi_el.append(_x1[ini:fin].reshape(1,-1))
             Xj_el.append(_x2[ini:fin].reshape(1,-1))
             K_el.append(1.0)
+            #print('new i:')
+            #print('Xi_el',Xi_el, 'length:', len(Xi_el[0][0]))
+            #print('Xj_el',Xj_el, 'length:', len(Xj_el[0][0]))
             if gamma_el[i] != 0.0: K_el[i] = gaussian_kernel(Xi_el[i], Xj_el[i], gamma_el[i])
             K = K * K_el[i]
             if i < len(elec_descrip)-1:
@@ -1234,6 +1265,10 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         Xi_fp_a = _x1[ndesp1:].reshape(1,-1)
         Xj_fp_d = _x2[elec_descrip_total:ndesp1].reshape(1,-1)
         Xj_fp_a = _x2[ndesp1:].reshape(1,-1)
+        #print('len(Xi_fp_d):', len(Xi_fp_d[0]))
+        #print('len(Xi_fp_a):', len(Xi_fp_a[0]))
+        #print('len(Xj_fp_d):', len(Xj_fp_d[0]))
+        #print('len(Xj_fp_a):', len(Xj_fp_a[0]))
         K_fp_d = 1.0
         K_fp_a = 1.0
         if gamma_d != 0.0: K_fp_d = tanimoto_kernel(Xi_fp_d, Xj_fp_d, gamma_d)

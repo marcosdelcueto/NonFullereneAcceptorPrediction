@@ -7,7 +7,7 @@
 #######################################
 ########## Parallelization ############
 #######################################
-NCPU = 20                             # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
+NCPU = 1                              # select number of CPUs (-1 means all CPUs in a node) (ONLY USED IF "optimize_hyperparams = True")
 #######################################
 ############ Verbose options ##########
 #######################################
@@ -46,14 +46,14 @@ CV = 'logo'                           # select 'loo' or 'kf' or 'last' or 'group
 kfold = 10                            # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
-groups_acceptor_labels = [[0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[14],[16],[18],[19],[21],[22],[23],[24],[25],[26],[27],[29],[30],[31],[32],[33]]
+groups_acceptor_labels = [[0],[1],[2],[3]]
 group_test = 5                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
 logo_error_type = 'A'                 # only used if CV='logo'. POssible types: 'A', 'B' or 'C'
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.0121]	  						  # hyperparameters with weights of d_el
-gamma_d  =  2.4691  					  		  # hyperparameter with weight of d_fp_d
-gamma_a  =  0.0953  	  				  		  # hyperparameter with weight of d_fp_a
+gamma_el = [0.0318]	  						  # hyperparameters with weights of d_el
+gamma_d  =  1.4980  					  		  # hyperparameter with weight of d_fp_d
+gamma_a  =  1.7926  	  				  		  # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -65,8 +65,8 @@ plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs 
 alpha = 0.3373          					  # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
-C = 0.11936879110802057               # regularization hyperparameter
-epsilon = 0.00021621466332921724      # epsilon-SVR
+C = 4.1664               # regularization hyperparameter
+epsilon = 0.0015      # epsilon-SVR
 C_lim = (0.00,0.1)                    # range in which C is optimized
 epsilon_lim = (0.00,0.5)        	     # range in which epsilon is optimized
 #######################################
