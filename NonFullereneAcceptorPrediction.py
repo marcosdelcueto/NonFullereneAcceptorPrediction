@@ -17,15 +17,13 @@ from time import time
 from scipy.optimize import differential_evolution
 from scipy.stats import pearsonr, spearmanr
 from sklearn.svm import SVR
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, LeaveOneOut
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
+from sklearn.model_selection import StratifiedKFold, train_test_split
 #import rdkit
 #from rdkit import Chem, DataStructs
 #from rdkit.Chem import rdMolDescriptors
@@ -36,9 +34,12 @@ input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input fil
 ########  END CUSTOMIZABLE PARAMETERS  ########
 #################################################################################
 
-
 #################################################################################
+########################
+########################
 ###### START MAIN ######
+########################
+########################
 def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim):
     # Read data
     df=pd.read_csv(db_file,index_col=0)
@@ -152,7 +153,7 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
             func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
         elif ML=='kNN':
             for k in range(len(Neighbors)):
-                #print('kNN, for k = %i' %(Neighbors[k]))
+                print('kNN, for k = %i' %(Neighbors[k]))
                 if condition=='electronic':
                     #hyperparams=[gamma_el,gamma_d,gamma_a]
                     fixed_hyperparams.append(Neighbors[k])
@@ -242,12 +243,17 @@ def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d
         if ML=='SVR': hyperparams=[gamma_el,gamma_d,gamma_a,C,epsilon]
         flat_hyperparams = hyperparams[0] + hyperparams[1:]
         func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
+######################
+######################
 ###### END MAIN ######
-#################################################################################
+######################
+######################
 
-#################################################################################
-###### START OTHER FUNCTIONS ######
-### Function reading input parameters
+#############################
+#############################
+# START read_initial_values #
+#############################
+#############################
 def read_initial_values(inp):
     # open input file
     input_file_name = inp
@@ -466,7 +472,17 @@ def read_initial_values(inp):
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
     return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type)
+#############################
+#############################
+## END read_initial_values ##
+#############################
+#############################
 
+#############################
+#############################
+#### START preprocess_fn ####
+#############################
+#############################
 ### Preprocess function to scale data ###
 def preprocess_fn(X):
     '''
@@ -515,11 +531,22 @@ def preprocess_fn(X):
     X = np.c_[ X_el,X_fp_d,X_fp_a]
 
     return X
+#############################
+#############################
+##### END preprocess_fn #####
+#############################
+#############################
 
+#############################
+#############################
+### START custom_distance ###
+#############################
+#############################
 ### Function to calculate custom metric for electronic and structural properties ###
 def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
     d_el = []
     distance = 0.0
+
     # Calculate distances for FP
     elec_descrip_total=0
     for k in elec_descrip:
@@ -548,8 +575,17 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
             ini = elec_descrip[j]
             fin = elec_descrip[j] + elec_descrip[j+1]
     return distance
+#############################
+#############################
+#### END custom_distance ####
+#############################
+#############################
 
-
+#############################
+#############################
+####### START func_ML #######
+#############################
+#############################
 ### ML Function to calculate rmse and r ###
 def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     final_call = fixed_hyperparams[-1]
@@ -605,7 +641,6 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     kNN_distances = []
     kNN_error = []
     test_indeces=[]
-    #################################################################
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
@@ -720,25 +755,27 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             #print('TOTAL rmse:', rms)
             ###########################################
             rms = error_logo
+            r,_  = pearsonr(y_real, y_predicted)
+            rho,_= spearmanr(y_real, y_predicted)
             print('FINAL LOGO ERROR:', rms)
             print('####################################')
             ###########################################
             print('New', ML, 'call:')
             if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
             #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
+            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:',rms,flush=True)
             if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
             if print_log==True: 
                 f_out.write('New %s call: \n' %(ML))
                 #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, rms))
+                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
         if final_call == True:
-            print('X:')
-            print(X)
-            print('y:')
-            print(y)
+            #print('X:')
+            #print(X)
+            #print('y:')
+            #print(y)
             y_real = []
             y_predicted = []
             error_logo = 0.0
@@ -772,12 +809,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 print('Train/Test sizes:', len(X_train), len(X_test))
                 #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
                 stime = time()
-                print('X_train:')
+                #print('X_train:')
                 #print(X_train)
-                print('len(X_train)',len(X_train))
-                print('y_train:')
+                #print('len(X_train)',len(X_train))
+                #print('y_train:')
                 #print(y_train)
-                print('len(y_train)',len(y_train))
+                #print('len(y_train)',len(y_train))
                 X_train=np.array(X_train)
                 y_train=np.array(y_train)
                 #ML_algorithm.fit(X_train, y_train) ### THIS WORKS with KRR
@@ -836,23 +873,23 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             elif weight_RMSE == 'linear':
                 weights = np.ones_like(y_real)
             ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-            r, _ = pearsonr(y_real, y_predicted)
+            r,_   = pearsonr(y_real, y_predicted)
+            rho,_ = spearmanr(y_real, y_predicted)
             #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
             #y_real_array=np.array(y_real)
             #y_predicted_array=np.array(y_predicted)
             #print('TEST m=%i, r=%f, rmse=%f' %(m, r, rms))
             print('Final', ML, 'call:')
             if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho', rho, 'rmse:',rms,flush=True)
             #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
             if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
             if print_log==True: 
                 f_out.write('New %s call: \n' %(ML))
                 #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, rms))
+                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
                 if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
                 f_out.flush()
-    #################################################################
     #################################################################
     elif CV !='logo':
     #################################################################
@@ -993,7 +1030,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             weights = y_real / np.linalg.norm(y_real) # weights proportional to PCE
         elif weight_RMSE == 'linear':
             weights = np.ones_like(y_real)
-        r, _ = pearsonr(y_real, y_predicted)
+        r,_   = pearsonr(y_real, y_predicted)
+        rho,_ = spearmanr(y_real, y_predicted)
         rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
         y_real_array=np.array(y_real)
         y_predicted_array=np.array(y_predicted)
@@ -1027,17 +1065,27 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             rms=0.0
         print('New', ML, 'call:')
         if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-        print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
+        print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
         if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
         if print_log==True: 
             f_out.write('New %s call: \n' %(ML))
-            f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
+            f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
             if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
             f_out.flush()
     return rms 
+#############################
+#############################
+####### END func_ML #########
+#############################
+#############################
 
-### SVR kernel function
+#############################
+#############################
+###### START kernel_SVR #####
+#############################
+#############################
 def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
+    #print('TEST call to SVR kernel')
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
@@ -1050,9 +1098,14 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         elec_descrip_total=elec_descrip_total+k
     if CV=='groups' or CV=='logo': elec_descrip_total=elec_descrip_total-1
     #print('START TEST kernel_SVR:')
+    #print('_x1:')
     #print(_x1)
     #print('size_matrix1',size_matrix1)
+    #print('_x1.shape[1]',_x1.shape[1])
+    #print('_x2:')
+    #print(_x2)
     #print('size_matrix2',size_matrix2)
+    #print('_x2.shape[1]',_x2.shape[1])
     #print('elec_descrip_total',elec_descrip_total)
 
     ### K_el ###
@@ -1127,7 +1180,17 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
     #print('K just before return:', K)
     return K
+#############################
+#############################
+####### END kernel_SVR ######
+#############################
+#############################
 
+#############################
+#############################
+### START gaussian_kernel ###
+#############################
+#############################
 ### KRR Kernel function ###
 def gaussian_kernel(Xi, Xj, gamma):
     '''
@@ -1158,7 +1221,17 @@ def gaussian_kernel(Xi, Xj, gamma):
     K = np.exp(-gamma * D2)
 
     return K
+#############################
+#############################
+#### END gaussian_kernel ####
+#############################
+#############################
 
+#############################
+#############################
+### START tanimoto_kernel ###
+#############################
+#############################
 ### KRR Kernel function ###
 def tanimoto_kernel(Xi, Xj, gamma):
     '''
@@ -1194,9 +1267,20 @@ def tanimoto_kernel(Xi, Xj, gamma):
     K = np.exp(-gamma * (1 - T)**2)
 
     return K
+#############################
+#############################
+#### END tanimoto_kernel ####
+#############################
+#############################
 
+#############################
+#############################
+# START build_hybrid_kernel #
+#############################
+#############################
 ### KRR Kernel function ###
 def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
+    #print('TEST call to KRR kernel build_hybrid_kernel')
     '''
     Parameters
     ----------
@@ -1214,6 +1298,7 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
     '''
 
     def hybrid_kernel(_x1, _x2):
+        #print('TEST call to KRR kernel hybrid_kernel')
         '''
         Function to compute a hybrid gaussian/Tanimoto.
 
@@ -1281,15 +1366,25 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         return K
 
     return hybrid_kernel
+#############################
+#############################
+## END build_hybrid_kernel ##
+#############################
+#############################
 
+#############################
+#############################
+##### START plot_scatter ####
+#############################
+#############################
 ### visualization and calculate pearsonr and spearmanr ###
 def plot_scatter(x, y, plot_type, plot_name):
     # general plot options
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
-    r, _ = pearsonr(x, y)
+    r,_ = pearsonr(x, y)
     rmse  = sqrt(mean_squared_error(x,y))
-    #rho, _ = spearmanr(x, y)
+    #rho,_ = spearmanr(x, y)
     #print('TEST', x, y)
     ma = np.max([x.max(), y.max()]) + 1
     mi = y.min() - 1
@@ -1308,7 +1403,6 @@ def plot_scatter(x, y, plot_type, plot_name):
         #ax.set_aspect('equal')
         #ax.plot(np.arange(0, ma + 0.1, 0.1), np.arange(0, ma + 0.1, 0.1), color="k", ls="--")
         #ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=22)
-    #######################################################################
     #######################################################################
     # options for plot_target_predictions
     if plot_type == 'plot_target_predictions':
@@ -1346,8 +1440,17 @@ def plot_scatter(x, y, plot_type, plot_name):
     # save plot into corresponding file
     plt.savefig(plot_name,dpi=600,bbox_inches='tight')
     return
+#############################
+#############################
+###### END plot_scatter #####
+#############################
+#############################
 
-### ###
+#############################
+#############################
+#### START squared_error ####
+#############################
+#############################
 def squared_error(x1,x2):
     if len(x1) != len(x2): # sanity check
         print('ERROR: length of predicted and real values does not have the same length')
@@ -1356,6 +1459,11 @@ def squared_error(x1,x2):
     for i in range(len(x1)):
         sq_error = sq_error + (x1[i]-x2[i])**2
     return sq_error
+#############################
+#############################
+##### END squared_error #####
+#############################
+#############################
 
 #### Function to get FP from smiles (not used) ###
 #def preprocess_smiles(X):
@@ -1444,6 +1552,7 @@ def squared_error(x1,x2):
 ################################################################################
 ################################################################################
 ################################################################################
+
 ### Run main program ###
 start = time()
 # Read input values
