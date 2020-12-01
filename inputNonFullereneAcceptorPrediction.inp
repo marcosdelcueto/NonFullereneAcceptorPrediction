@@ -40,26 +40,26 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 # Machine Learning Algorithm options ##
 #######################################
 plot_target_predictions = 'pred.png'  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
-ML = 'KRR'                            # 'kNN' or 'KRR' or 'SVR'
+ML = 'kNN'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
 CV = 'logo'                           # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
 kfold = 10                            # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
-groups_acceptor_labels = [[0],[1],[2],[3]]
+groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[17,26]]
 group_test = 5                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
 logo_error_type = 'A'                 # only used if CV='logo'. POssible types: 'A', 'B' or 'C'
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.0318]	  						  # hyperparameters with weights of d_el
-gamma_d  =  1.4980  					  		  # hyperparameter with weight of d_fp_d
-gamma_a  =  1.7926  	  				  		  # hyperparameter with weight of d_fp_a
+gamma_el = [1.15891161]	  						  # hyperparameters with weights of d_el
+gamma_d  =  5.59500894  					  		  # hyperparameter with weight of d_fp_d
+gamma_a  =  3.10659187  	  				  		  # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
 weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Default: 'linear'
 ### k-Nearest Neighbors ('kNN') #######
-Neighbors = [20] 	# number of nearest-neighbors
+Neighbors = [3] 	# number of nearest-neighbors
 plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
 alpha = 0.3373          					  # kernel hyperparameter
