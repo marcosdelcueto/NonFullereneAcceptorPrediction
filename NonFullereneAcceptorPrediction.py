@@ -24,27 +24,23 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 from sklearn.model_selection import StratifiedKFold, train_test_split
-#import rdkit
-#from rdkit import Chem, DataStructs
-#from rdkit.Chem import rdMolDescriptors
 #################################################################################
-######## START CUSTOMIZABLE PARAMETERS ########
+######################### START CUSTOMIZABLE PARAMETERS #########################
 input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
-# The rest of input options are inside the specified file
-########  END CUSTOMIZABLE PARAMETERS  ########
+############ The rest of input options are inside the specified file ############
+#########################  END CUSTOMIZABLE PARAMETERS  #########################
 #################################################################################
 
-#################################################################################
 ########################
 ########################
 ###### START MAIN ######
 ########################
 ########################
-def main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim):
+def main():
     # Read data
     df=pd.read_csv(db_file,index_col=0)
     # Preprocess data
-    #df=preprocess_smiles(df) (not needed, we're reading directly FP)
+    #df=preprocess_smiles(df) # (not needed, we're reading directly FP)
     #print('xcols:',xcols)
     xcols_flat = [item for sublist in xcols for item in sublist]
     #print('xcols_flat:',xcols_flat)
@@ -267,7 +263,6 @@ def read_initial_values(inp):
     for line in f1:
         if not line.startswith("#") and line.strip(): 
             input_info.append(line.split('#',1)[0].strip())
-
     # read names and values of variables
     number_elec_descrip=0
     for i in range(len(input_info)):
@@ -589,7 +584,7 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
 ### ML Function to calculate rmse and r ###
 def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     final_call = fixed_hyperparams[-1]
-    # Assign hyperparameters
+    ########## Assign hyperparameters ##########
     if condition=='structure':
         gamma_el = fixed_hyperparams[0]
         gamma_d = hyperparams[0]
@@ -624,207 +619,69 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         if ML=='SVR':
             C = hyperparams[i+3]
             epsilon = hyperparams[i+4]
-    # Build ML objects
+    ########## Build ML objects ##########
     if ML=='kNN':
         neighbor_value=fixed_hyperparams[-2]
         ML_algorithm = KNeighborsRegressor(n_neighbors=neighbor_value, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
+        # Set dummy values for unused hyperparams
+        alpha   = None
+        C       = None
+        epsilon = None
     elif ML=='KRR':
         kernel = build_hybrid_kernel(gamma_el=gamma_el,gamma_d=gamma_d,gamma_a=gamma_a)
         ML_algorithm = KernelRidge(alpha=alpha, kernel=kernel)
+        # Set dummy values for unused hyperparams
+        C       = None
+        epsilon = None
     elif ML=='SVR':
         ML_algorithm = SVR(kernel=functools.partial(kernel_SVR, gamma_el=gamma_el, gamma_d=gamma_d, gamma_a=gamma_a), C=C, epsilon=epsilon)
-    # Initialize values
-    y_predicted = []
-    y_real = []
-    counter = 0
-    #progress_count = 1
-    #kNN_distances = []
-    #kNN_error = []
-    #test_indeces=[]
+        # Set dummy values for unused hyperparams
+        alpha   = None
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
         ########## Preprocess LOGO ##########
-        #sizes = [0,7,4,5,4,25,20]
         sizes = []
         for j in groups_acceptor_labels:
             group_size=0
             for i in range(len(X)):
                 if X[i][0] in j:
                     group_size=group_size+1
-            #print('TEST:', j, group_size)
             sizes.append(group_size)
-        #print('TEST FINAL sizes', sizes)
         total_N = 0
         for i in sizes:
             total_N = total_N + i
         total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
-        #print('TEST total_N:', total_N)
         ########## Do LOGO ##########
         if final_call == False:
             y_real, y_predicted, test_indeces, error_logo = logo_cv_opt(X,y,ML_algorithm)
-            rms = get_pred_errors(y_real,y_predicted, test_indeces,error_logo,total_N,final_call,ML_algorithm)
         if final_call == True:
-            y_real, y_predicted, test_indeces, error_logo = logo_cv_final(X,y,ML_algorithm)
-            rms = get_pred_errors(y_real,y_predicted, test_indeces,error_logo,total_N,final_call,ML_algorithm)
+            y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error = logo_cv_final(X,y,ML_algorithm)
     #################################################################
     elif CV !='logo':
-    #################################################################
-    # Do novel-group validation
+        error_logo = None
+        total_N    = None
+        #################################################################
+        # Do novel-group validation
         if CV == 'groups':
             ########## Preprocess novel-group validation ##########
-            X_test       = []
-            y_test       = []
-            X_train      = []
-            y_train      = []
-            test_indeces = []
-            for i in range(len(X)):
-                #print('TEST:',i)
-                if X[i][0] in groups_acceptor_labels[group_test]:
-                    new_X = np.delete(X[i],0)
-                    X_test.append(new_X)
-                    y_test.append(y[i].tolist())
-                    if prediction_csv_file_name != None:
-                        test_indeces.append(i)
-                    #print ('TEST:', X[i][0])
-                else:
-                    new_X = np.delete(X[i],0)
-                    X_train.append(new_X)
-                    y_train.append(y[i])
-            for i in range(len(X_train)):
-                X_train[i] = X_train[i].tolist()
-                y_train[i] = y_train[i].tolist()
-            for i in range(len(X_test)):
-                X_test[i] = X_test[i].tolist()
-            y_train = [item for dummy in y_train for item in dummy ]
-            print('TEST done with preprocessing novel-groups')
+            X_train, y_train, X_test, y_test, test_indeces = groups_val_preprocess(X,y)
             ########## Do novel-group validation ##########
             if final_call == True:
-                y_real, y_predicted, kNN_error, kNN_distances = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
+                y_real, y_predicted, kNN_distances, kNN_error = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
             elif final_call == False:
                 y_real, y_predicted = groups_val_opt(X_train, y_train,ML_algorithm)
-                #rms = get_pred_errors(y_real,y_predicted,test_indeces,_,_,final_call,ML_algorithm):
         #################################################################
         # Do regular cross-validation
         elif CV == 'kf' or CV == 'loo':
-            # Cross-Validation
-            if CV=='kf':
-                kf = KFold(n_splits=kfold,shuffle=True)
-                validation=kf.split(X)
-            elif CV=='loo':
-                loo = LeaveOneOut()
-                validation=loo.split(X)
-            for train_index, test_index in validation:
-                # Print progress
-                if CV=='loo':
-                    if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
-                    prog = (counter+1)*100/Ndata
-                    if prog >= print_progress_every_x_percent*progress_count:
-                        print('Progress %.0f%s' %(prog, '%'), flush=True)
-                        progress_count = progress_count + 1
-                if CV=='kf':
-                    print('Step',counter," / ", kfold,flush=True)
-                counter=counter+1
-                # assign train and test indeces
-                X_train,X_test=X[train_index],X[test_index]
-                y_train,y_test=y[train_index],y[test_index]
-                # predict y values
-                y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-                # if kNN: calculate lists with kNN_distances and kNN_error
-                if ML=='kNN':
-                    provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-                    for i in range(len(provi_kNN_dist[0])):
-                        kNN_dist=np.mean(provi_kNN_dist[0][i])
-                        kNN_distances.append(kNN_dist)
-                    error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
-                    kNN_error.append(error)
-                # add predicted values in this LOO to list with total
-                y_predicted.append(y_pred.tolist())
-                y_real.append(y_test.tolist())
-                if prediction_csv_file_name != None:
-                    for i in test_index:
-                        test_indeces.append(i)
+            y_real, y_predicted, test_indeces, kNN_distances, kNN_error = kf_loo_cv(X,y,ML_algorithm)
         #################################################################
         # Do last X% validation
         elif CV =='last':
-            X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
-            # predict y values
-            y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-            # if kNN: calculate lists with kNN_distances and kNN_error
-            if ML=='kNN':
-                provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-                for i in range(len(provi_kNN_dist[0])):
-                    kNN_dist=np.mean(provi_kNN_dist[0][i])
-                    kNN_distances.append(kNN_dist)
-                error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
-                kNN_error.append(error)
-            # add predicted values in this LOO to list with total
-            y_predicted.append(y_pred.tolist())
-            y_real.append(y_test.tolist())
-            if prediction_csv_file_name != None:
-                for i in range(Ndata-Nlast,Ndata):
-                    test_indeces.append(i)
-        #################################################################
-        # Put results in a 1D list
-        y_real = [item for dummy in y_real for item in dummy ]
-        y_predicted = [item for dummy in y_predicted for item in dummy ]
-        y_real = [item for dummy in y_real for item in dummy ]
-        if final_call==True: 
-            y_predicted = y_predicted
-        else: 
-            y_predicted = [item for dummy in y_predicted for item in dummy ]
-        # Calculate rmse and r
-        if weight_RMSE == 'PCE2':
-            weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
-        elif weight_RMSE == 'PCE':
-            weights = y_real / np.linalg.norm(y_real) # weights proportional to PCE
-        elif weight_RMSE == 'linear':
-            weights = np.ones_like(y_real)
-        r,_   = pearsonr(y_real, y_predicted)
-        rho,_ = spearmanr(y_real, y_predicted)
-        rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-        y_real_array=np.array(y_real)
-        y_predicted_array=np.array(y_predicted)
-        #######################################
-        if prediction_csv_file_name != None:
-            df=pd.read_csv(db_file,index_col=0)
-            counter_i = 0
-            data=[]
-            for i in test_indeces:
-                df2 = df.loc[i]
-                value=[]
-                for j in columns_labels_prediction_csv:
-                    value.append(df2[j])
-                data_row=[i,value,y_real_array[counter_i],y_predicted_array[counter_i]]
-                data.append(data_row)
-                output_df = pd.DataFrame(data,columns=['Index','Labels','Real_target','Predicted_target'])
-                output_df.to_csv (prediction_csv_file_name, index = False, header=True)
-                counter_i = counter_i+1
-        print('########################################')
-        print('##### TEST: AM I SHOWING? - BEFORE PLOTS')
-        print('########################################')
-        #######################################
-        # Print plots
-        if plot_target_predictions != None: 
-            plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
-        if ML=='kNN' and plot_kNN_distances != None: 
-            kNN_distances_array=np.array(kNN_distances)
-            kNN_error_flat = [item for dummy in kNN_error for item in dummy]
-            kNN_error_array=np.array(kNN_error_flat)
-            plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
-        # Print results
-        if predict_unknown == True:
-            r=0.0
-            rms=0.0
-        print('New', ML, 'call:')
-        if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-        print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
-        if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
-        if print_log==True: 
-            f_out.write('New %s call: \n' %(ML))
-            f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-            if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
-            f_out.flush()
+            y_real, y_predicted, test_indeces, kNN_distances, kNN_error = last_val(X,y,ML_algorithm)
+    #################################################################
+    ########## Get prediction errors ##########
+    rms = get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a,alpha,C,epsilon)
     return rms 
 #############################
 #############################
@@ -834,11 +691,140 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 
 #############################
 #############################
+####### START kf_loo_cv #####
+#############################
+#############################
+def kf_loo_cv(X,y,ML_algorithm):
+    counter        = 0
+    progress_count = 1
+    y_real         = []
+    y_predicted    = []
+    kNN_error      = []
+    kNN_distances  = []
+    test_indeces   = []
+    # Cross-Validation
+    if CV=='kf':
+        kf = KFold(n_splits=kfold,shuffle=True)
+        validation=kf.split(X)
+    elif CV=='loo':
+        loo = LeaveOneOut()
+        validation=loo.split(X)
+    for train_index, test_index in validation:
+        # Print progress
+        if CV=='loo':
+            if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
+            prog = (counter+1)*100/Ndata
+            if prog >= print_progress_every_x_percent*progress_count:
+                print('Progress %.0f%s' %(prog, '%'), flush=True)
+                progress_count = progress_count + 1
+        if CV=='kf':
+            print('Step',counter," / ", kfold,flush=True)
+        counter=counter+1
+        # assign train and test indeces
+        X_train,X_test=X[train_index],X[test_index]
+        y_train,y_test=y[train_index],y[test_index]
+        # predict y values
+        y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+        # if kNN: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN':
+            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+            for i in range(len(provi_kNN_dist[0])):
+                kNN_dist=np.mean(provi_kNN_dist[0][i])
+                kNN_distances.append(kNN_dist)
+            error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+            kNN_error.append(error)
+        # add predicted values in this LOO to list with total
+        y_predicted.append(y_pred.tolist())
+        y_real.append(y_test.tolist())
+        if prediction_csv_file_name != None:
+            for i in test_index:
+                test_indeces.append(i)
+    return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
+#############################
+#############################
+######## END kf_loo_cv ######
+#############################
+#############################
+
+#############################
+#############################
+####### START last_val ######
+#############################
+#############################
+def last_val(X,y,ML_algorithm):
+    y_real        = []
+    y_predicted   = []
+    kNN_error     = []
+    kNN_distances = []
+    test_indeces  = []
+    X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
+    # predict y values
+    y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+    # if kNN: calculate lists with kNN_distances and kNN_error
+    if ML=='kNN':
+        provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+        for i in range(len(provi_kNN_dist[0])):
+            kNN_dist=np.mean(provi_kNN_dist[0][i])
+            kNN_distances.append(kNN_dist)
+        error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+        kNN_error.append(error)
+    # add predicted values to list with total
+    y_predicted.append(y_pred.tolist())
+    y_real.append(y_test.tolist())
+    if prediction_csv_file_name != None:
+        for i in range(Ndata-Nlast,Ndata):
+            test_indeces.append(i)
+    return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
+#############################
+#############################
+######## END last_val #######
+#############################
+#############################
+
+###############################
+###############################
+# START groups_val_preprocess #
+###############################
+###############################
+def groups_val_preprocess(X,y):
+    X_test       = []
+    y_test       = []
+    X_train      = []
+    y_train      = []
+    test_indeces = []
+    for i in range(len(X)):
+        #print('TEST:',i)
+        if X[i][0] in groups_acceptor_labels[group_test]:
+            new_X = np.delete(X[i],0)
+            X_test.append(new_X)
+            y_test.append(y[i].tolist())
+            if prediction_csv_file_name != None:
+                test_indeces.append(i)
+            #print ('TEST:', X[i][0])
+        else:
+            new_X = np.delete(X[i],0)
+            X_train.append(new_X)
+            y_train.append(y[i])
+    for i in range(len(X_train)):
+        X_train[i] = X_train[i].tolist()
+        y_train[i] = y_train[i].tolist()
+    for i in range(len(X_test)):
+        X_test[i] = X_test[i].tolist()
+    y_train = [item for dummy in y_train for item in dummy ]
+    return X_train, y_train, X_test, y_test, test_indeces
+###############################
+###############################
+## END groups_val_preprocess ##
+###############################
+###############################
+
+#############################
+#############################
 ### START groups_val_opt ####
 #############################
 #############################
 def groups_val_opt(X_train,y_train,ML_algorithm):
-    print('TEST STARTING groups_val_opt')
+    #print('TEST STARTING groups_val_opt')
     counter      = 0
     y_real       = []
     y_predicted  = []
@@ -868,7 +854,7 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     # add predicted values in this LOO to list with total
     y_predicted.append(y_total_pred)
     y_real.append(y_total_valid)
-    print('TEST FINISHING groups_val_opt')
+    #print('TEST FINISHING groups_val_opt')
     return y_real, y_predicted
 #############################
 #############################
@@ -900,7 +886,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     y_real.append(y_test)
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
-    return y_real, y_predicted, kNN_error, kNN_distances
+    return y_real, y_predicted, kNN_distances, kNN_error
 #############################
 #############################
 ### END groups_val_final ####
@@ -934,9 +920,6 @@ def logo_cv_opt(X,y,ML_algorithm):
                         new_X = np.delete(X[i],0)
                         X_test.append(new_X)
                         y_test.append(y[i].tolist())
-                        if prediction_csv_file_name != None:
-                            test_indeces.append(i)
-                        #print(X[i][0])
                     elif X[i][0] in groups_acceptor_labels[m]:
                         pass
                     else:
@@ -986,10 +969,12 @@ def logo_cv_opt(X,y,ML_algorithm):
 #############################
 #############################
 def logo_cv_final(X,y,ML_algorithm):
-    error_logo   = 0.0
-    y_real       = []
-    y_predicted  = []
-    test_indeces = []
+    error_logo    = 0.0
+    y_real        = []
+    y_predicted   = []
+    test_indeces  = []
+    kNN_error     = []
+    kNN_distances = []
     for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
         X_test  = []
         y_test  = []
@@ -1016,6 +1001,14 @@ def logo_cv_final(X,y,ML_algorithm):
         y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         y_predicted.append(y_pred.tolist())
         y_real.append(y_test)
+        # if kNN: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN':
+            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+            for i in range(len(provi_kNN_dist[0])):
+                kNN_dist=np.mean(provi_kNN_dist[0][i])
+                kNN_distances.append(kNN_dist)
+            error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+            kNN_error.append(error)
         #########################################
         y_test = [item for sublist in y_test for item in sublist]
         if logo_error_type == 'A':  ### Weight A
@@ -1028,7 +1021,7 @@ def logo_cv_final(X,y,ML_algorithm):
         print('error_logo',error_logo)
         #########################################
     print('FINAL LOGO ERROR:', error_logo)
-    return y_real, y_predicted, test_indeces, error_logo
+    return y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error
 #############################
 #############################
 ##### END logo_cv_final #####
@@ -1040,13 +1033,13 @@ def logo_cv_final(X,y,ML_algorithm):
 ### START get_pred_errors ###
 #############################
 #############################
-def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm):
+def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a,alpha,C,epsilon):
     #################################################################
     # Put real and predicted values in 1D lists
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
-    if final_call==False:
+    if final_call==False and ( CV == 'groups' or CV == 'logo' ):
         y_predicted = [item for dummy in y_predicted for item in dummy ]
     elif final_call==True:
         y_predicted = y_predicted
@@ -1092,28 +1085,26 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
     if plot_target_predictions != None:
         plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
     if ML=='kNN' and plot_kNN_distances != None:
-        kNN_distances_array=np.array(kNN_distances)
-        kNN_error_flat = [item for dummy in kNN_error for item in dummy]
-        kNN_error_array=np.array(kNN_error_flat)
-        plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
+        kNN_distancesi = np.array(kNN_distances)
+        kNN_error = [item for dummy in kNN_error for item in dummy]
+        kNN_error = np.array(kNN_error)
+        plot_scatter(kNN_distances, kNN_error, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
-    print('TEST get params:')
-    print(ML_algorithm.get_params())
-    neighbor_value = ML_algorithm.get_params()['n_neighbors']
-    gamma_el = ML_algorithm.get_params()['metric_params']['gamma_el']
-    gamma_d = ML_algorithm.get_params()['metric_params']['gamma_d']
-    gamma_a = ML_algorithm.get_params()['metric_params']['gamma_a']
+    #print('TEST get params:')
+    #print(ML_algorithm.get_params())
     if predict_unknown == True:
         r=0.0
         rms=0.0
     print('New', ML, 'call:')
-    if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
-    if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
+    #if ML=='kNN': print('kNN, for k = %i' %(ML_algorithm.get_params()['n_neighbors'])
+    if ML=='kNN': print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    if ML=='KRR': print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    if ML=='SVR': print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
     if print_log==True:
         f_out.write('New %s call: \n' %(ML))
-        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-        if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
+        if ML=='kNN': f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        if ML=='KRR': f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        if ML=='SVR': f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         f_out.flush()
     return rms
 #############################
@@ -1168,8 +1159,8 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
                 for j in range(elec_descrip[k]):
                     Xj_el[i].append(_x2[i][j])
             Xj_el = np.array(Xj_el)
-            print('Xi_el', Xi_el)
-            print('Xj_el', Xj_el)
+            #print('Xi_el', Xi_el)
+            #print('Xj_el', Xj_el)
             # calculate K_el
             D_el  = euclidean_distances(Xi_el, Xj_el)
             D2_el = np.square(D_el)
@@ -1426,12 +1417,10 @@ def plot_scatter(x, y, plot_type, plot_name):
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
     r,_ = pearsonr(x, y)
+    rho,_ = spearmanr(x, y)
     rmse  = sqrt(mean_squared_error(x,y))
-    #rho,_ = spearmanr(x, y)
-    #print('TEST', x, y)
     ma = np.max([x.max(), y.max()]) + 1
     mi = y.min() - 1
-    #print('ma, mi:', ma, mi)
     ax = plt.subplot(gs[0])
     ax.scatter(x, y, color="b")
     ax.tick_params(axis='both', which='major', direction='in', labelsize=20, pad=10, length=5)
@@ -1508,107 +1497,30 @@ def squared_error(x1,x2):
 #############################
 #############################
 
-#### Function to get FP from smiles (not used) ###
-#def preprocess_smiles(X):
-    #'''
-    #Function to preprocess SMILES.
-
-    #Parameters
-    #----------
-    #df: Pandas DataFrame.
-
-#### Function to get FP from smiles (not used) ###
-#def preprocess_smiles(X):
-    #'''
-    #Function to preprocess SMILES.
-
-    #Parameters
-    #----------
-    #df: Pandas DataFrame.
-        #input data DataFrame.
-
-    #Returns
-    #-------
-    #df: Pandas DataFrame.
-        #preprocessed data DataFrame.
-    #'''
-    #X["Smiles"]  = X["Smiles"].map(polish_smiles)
-    #X["DonorFP"] = X["Smiles"].map(get_fp_bitvect)
-    #return X
-
-#### Function to get FP from smiles (not used) ###
-#def polish_smiles(smiles, kekule=False):
-    #'''
-    #Function to polish a SMILES string through the RDKit.
-
-    #Parameters
-    #----------
-    #smiles: str.
-        #SMILES string.
-    #kekule: bool (default: False).
-        #whether to return Kekule SMILES.
-
-    #Returns
-    #-------
-    #polished: str.
-        #SMILES string.
-    #'''
-    #mol = Chem.MolFromSmiles(smiles)
-    #polished = Chem.MolToSmiles(mol, kekuleSmiles=kekule)
-    #return polished
-
-#### Function to get FP from smiles (not used) ###
-#def get_fp_bitvect(smiles):
-    #'''
-    #Function to convert a SMILES string to a Morgan fingerprint through the
-    #RDKit.
-
-    #Parameters
-    #----------
-    #smiles: str.
-        #SMILES string.
-
-    #Returns
-    #-------
-    #fp_arr: np.array.
-        #Bit vector corresponding to the Morgan fingerpring.
-    #'''
-    #mol = Chem.MolFromSmiles(smiles)
-    #fp = rdMolDescriptors.GetMorganFingerprintAsBitVect(mol, 2)
-    #fp_arr = np.zeros((1,))
-    #DataStructs.ConvertToNumpyArray(fp, fp_arr)
-    #return fp_arr
-
-### Function just used to test custom metrics (not used) ###
-#def mimic_minkowski(X1,X2):
-    #distance=0.0
-    #print('X1:',flush=True)
-    #print(X1,flush=True)
-    #print('X2:',flush=True)
-    #print(X2,flush=True)
-    #for i in range(len(X1)):
-        #distance=distance+(X1[i]-X2[i])**2
-    #distance=distance**(1.0/2.0)
-    #return distance
-
-##### END OTHER FUNCTIONS ######
-################################################################################
-################################################################################
-################################################################################
-
-### Run main program ###
+#########################################################
+################### Read input values ###################
+#########################################################
 start = time()
-# Read input values
-all_rmse_values = []
-all_r_values = []
-(ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type) = read_initial_values(input_file_name)
-# Execute main function
-main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
-# Print running time and close log file
+(ML, Neighbors, alpha, gamma_el, gamma_d, gamma_a, C, epsilon, optimize_hyperparams, 
+alpha_lim, gamma_el_lim, gamma_d_lim, gamma_a_lim, C_lim, epsilon_lim, db_file, 
+elec_descrip, xcols, ycols, Ndata, print_log, log_name, NCPU, f_out, FP_length, 
+weight_RMSE, CV, kfold, plot_target_predictions, plot_kNN_distances, 
+print_progress_every_x_percent, number_elec_descrip, groups_acceptor_labels, group_test, 
+acceptor_label_column, Nlast, prediction_csv_file_name, columns_labels_prediction_csv, 
+predict_unknown, logo_error_type) = read_initial_values(input_file_name)
+##########################################################
+################# Execute main function ##################
+##########################################################
+if __name__ == '__main__':
+    #main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
+    main()
+###########################################################
+########## Print running time and close log file ##########
+###########################################################
 time_taken = time()-start
 if print_log==True: print('######################################')
 if print_log==True: print('Output information can be reviewed in %s' %(log_name))
 if print_log==True: print('######################################')
-print ('Process took %0.2f seconds' %time_taken,flush=True)
 if print_log==True: f_out.write('Process took %0.2f seconds\n' %(time_taken))
 if print_log==True: f_out.close()
+print ('Process took %0.2f seconds' %time_taken,flush=True)
