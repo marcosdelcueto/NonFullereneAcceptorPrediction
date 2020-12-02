@@ -624,7 +624,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         if ML=='SVR':
             C = hyperparams[i+3]
             epsilon = hyperparams[i+4]
-    # Build kernel function and assign ML parameters
+    # Build ML objects
     if ML=='kNN':
         neighbor_value=fixed_hyperparams[-2]
         ML_algorithm = KNeighborsRegressor(n_neighbors=neighbor_value, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
@@ -637,13 +637,14 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     y_predicted = []
     y_real = []
     counter = 0
-    progress_count = 1
-    kNN_distances = []
-    kNN_error = []
-    test_indeces=[]
+    #progress_count = 1
+    #kNN_distances = []
+    #kNN_error = []
+    #test_indeces=[]
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
+        ########## Preprocess LOGO ##########
         #sizes = [0,7,4,5,4,25,20]
         sizes = []
         for j in groups_acceptor_labels:
@@ -659,252 +660,30 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             total_N = total_N + i
         total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
         #print('TEST total_N:', total_N)
+        ########## Do LOGO ##########
         if final_call == False:
-            rms_total = 0
-            error_logo = 0.0
-            for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0 . UNCOMMENT THIS LINE
-            #for m in range(1,4): # Note: we're ignoring group 0  . THIS LINE JUST FOR TESTING AND MAKE IT FASTER
-                y_real = []
-                y_predicted = []
-                print('############')
-                print('MAIN M GROUP', m)
-                print('############')
-                #new_rms = 0.0
-                for n in range(1,len(groups_acceptor_labels)): # UNCOMMENT THIS LINE
-                #for n in range(1,4): # THIS LINE JUST FOR TESTING AND MAKE IT FASTER
-                    if m != n:
-                        X_test = []
-                        y_test = []
-                        X_train = []
-                        y_train = []
-                        print('##### Sub n=%i group' %n)
-                        for i in range(len(X)):
-                            if X[i][0] in groups_acceptor_labels[n]:
-                                new_X = np.delete(X[i],0)
-                                X_test.append(new_X)
-                                y_test.append(y[i].tolist())
-                                counter = counter+1
-                                if prediction_csv_file_name != None:
-                                    test_indeces.append(i)
-                                #print(X[i][0])
-                            elif X[i][0] in groups_acceptor_labels[m]:
-                                pass
-                            else:
-                                new_X = np.delete(X[i],0)
-                                X_train.append(new_X)
-                                y_train.append(y[i])
-                        y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
-                        # add predicted values in this LOO to list with total
-                        y_predicted.append(y_pred.tolist())
-                        y_real.append(y_test)
-                        #partial_rms = sqrt(mean_squared_error(y_test,y_pred.tolist()))
-                        #new_rms = new_rms + partial_rms
-                        #print('partial_rms:', partial_rms)
-                        #########################################
-                        y_pred = [item for sublist in y_pred.tolist() for item in sublist]
-                        y_test = [item for sublist in y_test for item in sublist]
-                        if logo_error_type == 'A':  ### Weight A
-                            logo_weight = 1.0
-                        elif logo_error_type == 'B':  ### Weight B
-                            logo_weight = 1/((len(sizes)-2)*sizes[n])
-                        elif logo_error_type == 'C': ### Weight C
-                            sum_sizes_n = 0
-                            for i in range(len(sizes)):
-                                if i != m: sum_sizes_n = sum_sizes_n + sizes[i]
-                            #print('sum_sizes_n', sum_sizes_n)
-                            logo_weight = 1/(sum_sizes_n)
-                        print('logo_weight:', logo_weight)
-                        error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                        print('y_pred:', y_pred)
-                        print('y_test',y_test)
-                        print('Error logo',error_logo)
-                        #########################################
-                print('####################################')
-                #print('new_rms:', new_rms, new_rms/5)
-                # Put results in a 1D list
-                y_real = [item for dummy in y_real for item in dummy ]
-                y_predicted = [item for dummy in y_predicted for item in dummy ]
-                y_real = [item for dummy in y_real for item in dummy ]
-                y_predicted = [item for dummy in y_predicted for item in dummy ]
-                #print('#### TEST1 ####:', len(y_real))
-                print('y_real:', y_real)
-                print('y_predicted:', y_predicted)
-                # Calculate rmse and r
-                if weight_RMSE == 'PCE2':
-                    weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
-                elif weight_RMSE == 'PCE':
-                    weights = y_real / np.linalg.norm(y_real) # weights proportional to PCE
-                elif weight_RMSE == 'linear':
-                    weights = np.ones_like(y_real)
-                ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-                #all_identical = 0
-                #for i in range(len(y_predicted)-1):
-                    #if y_predicted[i] == y_predicted[i+1]: all_identical = all_identical+1
-                #if all_identical == len(y_predicted)-1:
-                    #r = np.float64(1.0)
-                #else:
-                    #r, _ = pearsonr(y_real, y_predicted)
-                #r, _ = pearsonr(y_real, y_predicted)
-                #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-                #print('TEST rmse, size:', rms, sizes[m])
-                #rms_total = rms_total + rms*sizes[m]
-                #y_real_array=np.array(y_real)
-                #y_predicted_array=np.array(y_predicted)
-                #print('TEST m=%i, rmse=%f' %(m, rms))
-            #rms = rms_total
-            #print('TOTAL rmse:', rms)
-            ###########################################
-            rms = error_logo
-            r,_  = pearsonr(y_real, y_predicted)
-            rho,_= spearmanr(y_real, y_predicted)
-            print('FINAL LOGO ERROR:', rms)
-            print('####################################')
-            ###########################################
-            print('New', ML, 'call:')
-            if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r,'rmse:',rms,flush=True)
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:',rms,flush=True)
-            if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
-            if print_log==True: 
-                f_out.write('New %s call: \n' %(ML))
-                #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-                if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
-                f_out.flush()
+            y_real, y_predicted, test_indeces, error_logo = logo_cv_opt(X,y,ML_algorithm)
+            rms = get_pred_errors(y_real,y_predicted, test_indeces,error_logo,total_N,final_call,ML_algorithm)
         if final_call == True:
-            #print('X:')
-            #print(X)
-            #print('y:')
-            #print(y)
-            y_real = []
-            y_predicted = []
-            error_logo = 0.0
-            for m in range(1,len(groups_acceptor_labels)):
-                X_test = []
-                y_test = []
-                X_train = []
-                y_train = []
-                print('############')
-                print('MAIN M GROUP', m)
-                print('############')
-                counter1=0
-                counter2=0
-                for i in range(len(X)):
-                    #print('TEST where is warning', i)
-                    if X[i][0] in groups_acceptor_labels[m]:
-                        new_X = np.delete(X[i],0)
-                        X_test.append(new_X)
-                        y_test.append(y[i].tolist())
-                        counter = counter+1
-                        if prediction_csv_file_name != None:
-                            test_indeces.append(i)
-                        counter1=counter1+1
-                    else:
-                        #print('train: X[i]', X[i])
-                        new_X = np.delete(X[i],0)
-                        X_train.append(new_X)
-                        y_train.append(y[i])
-                        counter2=counter2+1
-                #print('TEST counter1: %i, counter2: %i' %(counter1, counter2))
-                print('Train/Test sizes:', len(X_train), len(X_test))
-                #y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
-                stime = time()
-                #print('X_train:')
-                #print(X_train)
-                #print('len(X_train)',len(X_train))
-                #print('y_train:')
-                #print(y_train)
-                #print('len(y_train)',len(y_train))
-                X_train=np.array(X_train)
-                y_train=np.array(y_train)
-                #ML_algorithm.fit(X_train, y_train) ### THIS WORKS with KRR
-                ML_algorithm.fit(X_train, y_train.ravel())
-                print("Time for KRR fitting: %.3f" % (time() - stime))
-                stime = time()
-                #print('X_test:')
-                #print(X_test)
-                #print('len(X_test)',len(X_test))
-                y_pred = ML_algorithm.predict(X_test)
-                print("Time for GPR prediction: %.3f" % (time() - stime))
-                y_predicted.append(y_pred.tolist())
-                y_real.append(y_test)
-                #########################################
-                #print('TEST y_pred:', y_pred)
-                #print('TEST y_test:', y_test)
-                #if len(y_pred) > 1: y_pred = [item for sublist in y_pred.tolist() for item in sublist]
-                y_test = [item for sublist in y_test for item in sublist]
-                if logo_error_type == 'A':  ### Weight A
-                    logo_weight = 1.0
-                elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
-                    logo_weight = 1/((len(sizes)-1)*sizes[m])
-                error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                print('y_pred:', y_pred)
-                print('y_test',y_test)
-                print('error_logo',error_logo)
-                #########################################
-            print('FINAL LOGO ERROR:', error_logo)
-            if logo_error_type == 'A': rms = math.sqrt(error_logo/total_N)
-            if logo_error_type == 'B' or logo_error_type == 'C': rms = math.sqrt(error_logo)
-            print('FINAL LOGO RMSE:', rms)
-            print('####################################')
-            # Put results in a 1D list
-            #print('TEST y_real:', y_real)
-            #print('TEST y_predicted:', y_predicted)
-            y_real = [item for dummy in y_real for item in dummy ]
-            y_predicted = [item for dummy in y_predicted for item in dummy ]
-            #print('TEST y_real:', y_real)
-            #print('TEST y_predicted:', y_predicted)
-            y_real = [item for dummy in y_real for item in dummy ]
-            #if ML != 'SVR': y_predicted = [item for dummy in y_predicted for item in dummy ]
-            print('y_real:', y_real)
-            print('y_predicted:', y_predicted)
-            #print('TEST len(y_real)', len(y_real))
-            #print('TEST len(y_predicted)', len(y_predicted))
-            # Plot predictions
-            y_real_array=np.array(y_real)
-            y_predicted_array=np.array(y_predicted)
-            if plot_target_predictions != None: 
-                plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
-            # Calculate rmse and r
-            if weight_RMSE == 'PCE2':
-                weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
-            elif weight_RMSE == 'PCE':
-                weights = y_real / np.linalg.norm(y_real) # weights proportional to PCE
-            elif weight_RMSE == 'linear':
-                weights = np.ones_like(y_real)
-            ### Check if all predicted y values are identical. If so, set r=1 to avoid NaN
-            r,_   = pearsonr(y_real, y_predicted)
-            rho,_ = spearmanr(y_real, y_predicted)
-            #rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-            #y_real_array=np.array(y_real)
-            #y_predicted_array=np.array(y_predicted)
-            #print('TEST m=%i, r=%f, rmse=%f' %(m, r, rms))
-            print('Final', ML, 'call:')
-            if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
-            print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho', rho, 'rmse:',rms,flush=True)
-            #print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'rmse:',rms,flush=True)
-            if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
-            if print_log==True: 
-                f_out.write('New %s call: \n' %(ML))
-                #f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rms))
-                f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-                if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
-                f_out.flush()
+            y_real, y_predicted, test_indeces, error_logo = logo_cv_final(X,y,ML_algorithm)
+            rms = get_pred_errors(y_real,y_predicted, test_indeces,error_logo,total_N,final_call,ML_algorithm)
     #################################################################
     elif CV !='logo':
     #################################################################
     # Do novel-group validation
         if CV == 'groups':
-            X_test = []
-            y_test = []
-            X_train = []
-            y_train = []
+            ########## Preprocess novel-group validation ##########
+            X_test       = []
+            y_test       = []
+            X_train      = []
+            y_train      = []
+            test_indeces = []
             for i in range(len(X)):
+                #print('TEST:',i)
                 if X[i][0] in groups_acceptor_labels[group_test]:
                     new_X = np.delete(X[i],0)
                     X_test.append(new_X)
                     y_test.append(y[i].tolist())
-                    counter = counter+1
                     if prediction_csv_file_name != None:
                         test_indeces.append(i)
                     #print ('TEST:', X[i][0])
@@ -918,42 +697,13 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             for i in range(len(X_test)):
                 X_test[i] = X_test[i].tolist()
             y_train = [item for dummy in y_train for item in dummy ]
+            print('TEST done with preprocessing novel-groups')
+            ########## Do novel-group validation ##########
             if final_call == True:
-                y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
-                # if kNN: calculate lists with kNN_distances and kNN_error
-                if ML=='kNN':
-                    provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-                    for i in range(len(provi_kNN_dist[0])):
-                        kNN_dist=np.mean(provi_kNN_dist[0][i])
-                        kNN_distances.append(kNN_dist)
-                    error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
-                    kNN_error.append(error)
-                # add predicted values in this LOO to list with total
-                y_predicted.append(y_pred.tolist())
-                y_real.append(y_test)
-                y_real_array=np.array(y_real)
-                y_predicted_array=np.array(y_predicted)
-                if plot_target_predictions != None: 
-                    plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
+                y_real, y_predicted, kNN_error, kNN_distances = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
             elif final_call == False:
-                ###################################################
-                # For novel-group validation, we need to minimize RMSE of validation group within Train
-                X_train=np.array(X_train)
-                y_train=np.array(y_train)
-                loo = LeaveOneOut()
-                validation=loo.split(X_train)
-                y_total_pred = []
-                y_total_valid = []
-                for train_index, valid_index in validation:
-                    X_new_train,X_new_valid=X_train[train_index],X_train[valid_index]
-                    y_new_train,y_new_valid=y_train[train_index],y_train[valid_index]
-                    y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
-                    y_total_valid.append(y_new_valid)
-                    y_total_pred.append(y_pred)
-                ###################################################
-                # add predicted values in this LOO to list with total
-                y_predicted.append(y_total_pred)
-                y_real.append(y_total_valid)
+                y_real, y_predicted = groups_val_opt(X_train, y_train,ML_algorithm)
+                #rms = get_pred_errors(y_real,y_predicted,test_indeces,_,_,final_call,ML_algorithm):
         #################################################################
         # Do regular cross-validation
         elif CV == 'kf' or CV == 'loo':
@@ -1050,6 +800,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 output_df = pd.DataFrame(data,columns=['Index','Labels','Real_target','Predicted_target'])
                 output_df.to_csv (prediction_csv_file_name, index = False, header=True)
                 counter_i = counter_i+1
+        print('########################################')
+        print('##### TEST: AM I SHOWING? - BEFORE PLOTS')
+        print('########################################')
         #######################################
         # Print plots
         if plot_target_predictions != None: 
@@ -1076,6 +829,296 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 #############################
 #############################
 ####### END func_ML #########
+#############################
+#############################
+
+#############################
+#############################
+### START groups_val_opt ####
+#############################
+#############################
+def groups_val_opt(X_train,y_train,ML_algorithm):
+    print('TEST STARTING groups_val_opt')
+    counter      = 0
+    y_real       = []
+    y_predicted  = []
+    # For novel-group validation, we need to minimize RMSE of validation group within Train
+    X_train=np.array(X_train)
+    y_train=np.array(y_train)
+    loo = LeaveOneOut()
+    validation=loo.split(X_train)
+    y_total_pred = []
+    y_total_valid = []
+    for train_index, valid_index in validation:
+        #print('TEST', counter)
+        counter = counter+1
+        X_new_train,X_new_valid=X_train[train_index],X_train[valid_index]
+        y_new_train,y_new_valid=y_train[train_index],y_train[valid_index]
+        #print('TEST X_new_train:', len(X_new_train))
+        #print(X_new_train)
+        #print('TEST X_new_valid:', len(X_new_valid))
+        #print(X_new_valid)
+        #print('TEST y_new_train:', len(y_new_train))
+        #print(y_new_train)
+        #print('TEST y_new_valid:', len(y_new_valid))
+        #print(y_new_valid)
+        y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
+        y_total_valid.append(y_new_valid)
+        y_total_pred.append(y_pred)
+    # add predicted values in this LOO to list with total
+    y_predicted.append(y_total_pred)
+    y_real.append(y_total_valid)
+    print('TEST FINISHING groups_val_opt')
+    return y_real, y_predicted
+#############################
+#############################
+#### END groups_val_opt #####
+#############################
+#############################
+
+#############################
+#############################
+## START groups_val_final ###
+#############################
+#############################
+def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
+    y_real        = []
+    y_predicted   = []
+    kNN_error     = []
+    kNN_distances = []
+    y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+    # if kNN: calculate lists with kNN_distances and kNN_error
+    if ML=='kNN':
+        provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+        for i in range(len(provi_kNN_dist[0])):
+            kNN_dist=np.mean(provi_kNN_dist[0][i])
+            kNN_distances.append(kNN_dist)
+        error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+        kNN_error.append(error)
+    # add predicted values in this LOO to list with total
+    y_predicted.append(y_pred.tolist())
+    y_real.append(y_test)
+    y_real_array=np.array(y_real)
+    y_predicted_array=np.array(y_predicted)
+    return y_real, y_predicted, kNN_error, kNN_distances
+#############################
+#############################
+### END groups_val_final ####
+#############################
+#############################
+
+#############################
+#############################
+##### START logo_cv_opt #####
+#############################
+#############################
+def logo_cv_opt(X,y,ML_algorithm):
+    rms_total    = 0.0
+    error_logo   = 0.0
+    y_real       = []
+    y_predicted  = []
+    test_indeces = []
+    for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
+        print('############')
+        print('MAIN M GROUP', m)
+        print('############')
+        for n in range(1,len(groups_acceptor_labels)): #  Note: we're ignoring group 0
+            if m != n:
+                X_test  = []
+                y_test  = []
+                X_train = []
+                y_train = []
+                print('##### Sub n=%i group' %n)
+                for i in range(len(X)):
+                    if X[i][0] in groups_acceptor_labels[n]:
+                        new_X = np.delete(X[i],0)
+                        X_test.append(new_X)
+                        y_test.append(y[i].tolist())
+                        if prediction_csv_file_name != None:
+                            test_indeces.append(i)
+                        #print(X[i][0])
+                    elif X[i][0] in groups_acceptor_labels[m]:
+                        pass
+                    else:
+                        new_X = np.delete(X[i],0)
+                        X_train.append(new_X)
+                        y_train.append(y[i])
+                y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+                # Add predicted values in this LOO to list with total
+                y_predicted.append(y_pred.tolist())
+                y_real.append(y_test)
+                #########################################
+                y_pred = [item for sublist in y_pred.tolist() for item in sublist]
+                y_test = [item for sublist in y_test for item in sublist]
+                # Weight A
+                if logo_error_type == 'A':
+                    logo_weight = 1.0
+                # Weight B
+                elif logo_error_type == 'B':
+                    logo_weight = 1/((len(sizes)-2)*sizes[n])
+                # Weight C
+                elif logo_error_type == 'C':
+                    sum_sizes_n = 0
+                    for i in range(len(sizes)):
+                        if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
+                    logo_weight = 1/(sum_sizes_n)
+                print('logo_weight:', logo_weight)
+                error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+                print('y_pred:', y_pred)
+                print('y_test',y_test)
+                print('Error logo',error_logo)
+                #########################################
+        print('####################################')
+        print('y_real:', y_real)
+        print('y_predicted:', y_predicted)
+    print('FINAL LOGO ERROR:', error_logo)
+    print('####################################')
+    return y_real, y_predicted, test_indeces, error_logo
+#############################
+#############################
+###### END logo_cv_opt ######
+#############################
+#############################
+
+#############################
+#############################
+#### START logo_cv_final ####
+#############################
+#############################
+def logo_cv_final(X,y,ML_algorithm):
+    error_logo   = 0.0
+    y_real       = []
+    y_predicted  = []
+    test_indeces = []
+    for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
+        X_test  = []
+        y_test  = []
+        X_train = []
+        y_train = []
+        print('############')
+        print('MAIN M GROUP', m)
+        print('############')
+        for i in range(len(X)):
+            if X[i][0] in groups_acceptor_labels[m]:
+                new_X = np.delete(X[i],0)
+                X_test.append(new_X)
+                y_test.append(y[i].tolist())
+                if prediction_csv_file_name != None:
+                    test_indeces.append(i)
+            else:
+                #print('train: X[i]', X[i])
+                new_X = np.delete(X[i],0)
+                X_train.append(new_X)
+                y_train.append(y[i])
+        print('Train/Test sizes:', len(X_train), len(X_test))
+        X_train=np.array(X_train)
+        y_train=np.array(y_train)
+        y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+        y_predicted.append(y_pred.tolist())
+        y_real.append(y_test)
+        #########################################
+        y_test = [item for sublist in y_test for item in sublist]
+        if logo_error_type == 'A':  ### Weight A
+            logo_weight = 1.0
+        elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
+            logo_weight = 1/((len(sizes)-1)*sizes[m])
+        error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+        print('y_pred:', y_pred)
+        print('y_test',y_test)
+        print('error_logo',error_logo)
+        #########################################
+    print('FINAL LOGO ERROR:', error_logo)
+    return y_real, y_predicted, test_indeces, error_logo
+#############################
+#############################
+##### END logo_cv_final #####
+#############################
+#############################
+
+#############################
+#############################
+### START get_pred_errors ###
+#############################
+#############################
+def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm):
+    #################################################################
+    # Put real and predicted values in 1D lists
+    y_real = [item for dummy in y_real for item in dummy ]
+    y_predicted = [item for dummy in y_predicted for item in dummy ]
+    y_real = [item for dummy in y_real for item in dummy ]
+    if final_call==False:
+        y_predicted = [item for dummy in y_predicted for item in dummy ]
+    elif final_call==True:
+        y_predicted = y_predicted
+    # Calculate rmse, r and rho
+    if weight_RMSE == 'PCE2':
+        weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
+    elif weight_RMSE == 'PCE':
+        weights = y_real / np.linalg.norm(y_real) # weights proportional to PCE
+    elif weight_RMSE == 'linear':
+        weights = np.ones_like(y_real)
+    r,_   = pearsonr(y_real, y_predicted)
+    rho,_ = spearmanr(y_real, y_predicted)
+    if CV != 'logo':
+        rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
+    # for LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
+    else:
+        if final_call==False:
+            rms = error_logo
+        elif final_call==True:
+            if logo_error_type == 'A': 
+                rms = math.sqrt(error_logo/total_N)
+            elif logo_error_type == 'B' or logo_error_type == 'C': 
+                rms = math.sqrt(error_logo)
+    y_real_array=np.array(y_real)
+    y_predicted_array=np.array(y_predicted)
+    #######################################
+    if prediction_csv_file_name != None:
+        df=pd.read_csv(db_file,index_col=0)
+        counter_i = 0
+        data=[]
+        for i in test_indeces:
+            df2 = df.loc[i]
+            value=[]
+            for j in columns_labels_prediction_csv:
+                value.append(df2[j])
+            data_row=[i,value,y_real_array[counter_i],y_predicted_array[counter_i]]
+            data.append(data_row)
+            output_df = pd.DataFrame(data,columns=['Index','Labels','Real_target','Predicted_target'])
+            output_df.to_csv (prediction_csv_file_name, index = False, header=True)
+            counter_i = counter_i+1
+    #######################################
+    # Print plots
+    if plot_target_predictions != None:
+        plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
+    if ML=='kNN' and plot_kNN_distances != None:
+        kNN_distances_array=np.array(kNN_distances)
+        kNN_error_flat = [item for dummy in kNN_error for item in dummy]
+        kNN_error_array=np.array(kNN_error_flat)
+        plot_scatter(kNN_distances_array, kNN_error_array, 'plot_kNN_distances', plot_kNN_distances)
+    # Print results
+    print('TEST get params:')
+    print(ML_algorithm.get_params())
+    neighbor_value = ML_algorithm.get_params()['n_neighbors']
+    gamma_el = ML_algorithm.get_params()['metric_params']['gamma_el']
+    gamma_d = ML_algorithm.get_params()['metric_params']['gamma_d']
+    gamma_a = ML_algorithm.get_params()['metric_params']['gamma_a']
+    if predict_unknown == True:
+        r=0.0
+        rms=0.0
+    print('New', ML, 'call:')
+    if ML=='kNN': print('kNN, for k = %i' %(neighbor_value))
+    print('gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    if ML=='KRR' or ML=='SVR': print('hyperparameters:', ML_algorithm.get_params())
+    if print_log==True:
+        f_out.write('New %s call: \n' %(ML))
+        f_out.write('gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        if ML=='KRR' or ML=='SVR': f_out.write('hyperparameters: %s \n' %(str(ML_algorithm.get_params())))
+        f_out.flush()
+    return rms
+#############################
+#############################
+#### END get_pred_errors ####
 #############################
 #############################
 
