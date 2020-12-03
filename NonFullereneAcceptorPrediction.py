@@ -1165,10 +1165,10 @@ def logo_cv_opt(X,y,ML_algorithm):
                     for i in range(len(sizes)):
                         if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
                     logo_weight = 1/(sum_sizes_n)
-                print('logo_weight:', logo_weight)
+                #print('logo_weight:', logo_weight)
                 error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                print('y_pred:', y_pred)
-                print('y_test',y_test)
+                #print('y_pred:', y_pred)
+                #print('y_test',y_test)
                 print('Error logo',error_logo)
                 #########################################
         print('####################################')
@@ -1273,8 +1273,8 @@ def logo_cv_final(X,y,ML_algorithm):
         elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
             logo_weight = 1/((len(sizes)-1)*sizes[m])
         error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-        print('y_pred:', y_pred)
-        print('y_test',y_test)
+        #print('y_pred:', y_pred)
+        #print('y_test',y_test)
         print('error_logo',error_logo)
         #########################################
     print('FINAL LOGO ERROR:', error_logo)
