@@ -43,7 +43,7 @@ def main():
     #df=preprocess_smiles(df) # (not needed, we're reading directly FP)
     #print('xcols:',xcols)
     xcols_flat = [item for sublist in xcols for item in sublist]
-    #print('xcols_flat:',xcols_flat)
+    #print('xcols:',xcols)
     X=df[xcols_flat].values
     y=df[ycols].values
     for i in range(Ndata):
@@ -794,6 +794,10 @@ def kf_loo_cv(X,y,ML_algorithm):
         X_train,X_test=X[train_index],X[test_index]
         y_train,y_test=y[train_index],y[test_index]
         # predict y values
+        #print('TEST X_train:', X_train)
+        #print('TEST X_test:', X_test)
+        #print('TEST before ravel:', y_train)
+        #print('TEST after ravel : ravel:', y_train.ravel())
         y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         # if kNN: calculate lists with kNN_distances and kNN_error
         if ML=='kNN':
@@ -801,7 +805,7 @@ def kf_loo_cv(X,y,ML_algorithm):
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
                 kNN_distances.append(kNN_dist)
-            error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+            error = np.sum((y_pred - y_test)**2)
             kNN_error.append(error)
         # add predicted values in this LOO to list with total
         y_predicted.append(y_pred.tolist())
@@ -856,6 +860,10 @@ def last_val(X,y,ML_algorithm):
     test_indeces  = []
     X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
     # predict y values
+    #print('TEST X_train:', X_train)
+    #print('TEST X_test:', X_test)
+    #print('TEST before ravel:', y_train)
+    #print('TEST after ravel : ravel:', y_train.ravel())
     y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
     # if kNN: calculate lists with kNN_distances and kNN_error
     if ML=='kNN':
@@ -863,7 +871,7 @@ def last_val(X,y,ML_algorithm):
         for i in range(len(provi_kNN_dist[0])):
             kNN_dist=np.mean(provi_kNN_dist[0][i])
             kNN_distances.append(kNN_dist)
-        error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+        error = np.sum((y_pred - y_test)**2)
         kNN_error.append(error)
     # add predicted values to list with total
     y_predicted.append(y_pred.tolist())
@@ -970,8 +978,8 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     y_real       = []
     y_predicted  = []
     # For novel-group validation, we need to minimize RMSE of validation group within Train
-    X_train=np.array(X_train)
-    y_train=np.array(y_train)
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
     loo = LeaveOneOut()
     validation=loo.split(X_train)
     y_total_pred = []
@@ -989,6 +997,10 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
         #print(y_new_train)
         #print('TEST y_new_valid:', len(y_new_valid))
         #print(y_new_valid)
+        #print('TEST X_train:', X_new_train)
+        #print('TEST X_test:', X_new_valid)
+        #print('TEST before ravel:', y_new_train)
+        #print('TEST after ravel : ravel:', y_new_train.ravel())
         y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
         y_total_valid.append(y_new_valid)
         y_total_pred.append(y_pred)
@@ -1044,7 +1056,10 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     X_train=np.array(X_train)
     y_train=np.array(y_train)
     X_test=np.array(X_test)
-    y_test=np.array(y_test)
+    #print('TEST X_train:', X_train)
+    #print('TEST X_test:', X_test)
+    #print('TEST before ravel:', y_train)
+    #print('TEST after ravel : ravel:', y_train.ravel())
     y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
     # if kNN: calculate lists with kNN_distances and kNN_error
     if ML=='kNN':
@@ -1052,7 +1067,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
         for i in range(len(provi_kNN_dist[0])):
             kNN_dist=np.mean(provi_kNN_dist[0][i])
             kNN_distances.append(kNN_dist)
-        error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+        error = np.sum((y_pred - y_test)**2)
         kNN_error.append(error)
     # add predicted values in this LOO to list with total
     y_predicted.append(y_pred.tolist())
@@ -1124,6 +1139,13 @@ def logo_cv_opt(X,y,ML_algorithm):
                         new_X = np.delete(X[i],0)
                         X_train.append(new_X)
                         y_train.append(y[i])
+                X_train = np.array(X_train)
+                y_train = np.array(y_train)
+                X_test  = np.array(X_test)
+                #print('TEST X_train:', X_train)
+                #print('TEST X_test:', X_test)
+                #print('TEST before ravel:', y_train)
+                #print('TEST after ravel :', y_train.ravel())
                 y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
                 # Add predicted values in this LOO to list with total
                 y_predicted.append(y_pred.tolist())
@@ -1222,9 +1244,17 @@ def logo_cv_final(X,y,ML_algorithm):
                 new_X = np.delete(X[i],0)
                 X_train.append(new_X)
                 y_train.append(y[i])
-        print('Train/Test sizes:', len(X_train), len(X_test))
-        X_train=np.array(X_train)
-        y_train=np.array(y_train)
+        #print('Train/Test sizes:', len(X_train), len(X_test))
+        #print('TEST before X_train:', X_train)
+        #print('TEST before X_test:', X_test)
+        #print('TEST before before ravel:', y_train)
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test  = np.array(X_test)
+        #print('TEST after X_train:', X_train)
+        #print('TEST after X_test:', X_test)
+        #print('TEST after before ravel:', y_train)
+        #print('TEST after after ravel : ravel:', y_train.ravel())
         y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         y_predicted.append(y_pred.tolist())
         y_real.append(y_test)
@@ -1234,7 +1264,7 @@ def logo_cv_final(X,y,ML_algorithm):
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
                 kNN_distances.append(kNN_dist)
-            error = [sqrt((float(i - j))**2) for i, j in zip(y_pred, y_test)]
+            error = np.sum((y_pred - y_test)**2)
             kNN_error.append(error)
         #########################################
         y_test = [item for sublist in y_test for item in sublist]
