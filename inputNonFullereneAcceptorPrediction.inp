@@ -39,10 +39,10 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 #######################################
 # Machine Learning Algorithm options ##
 #######################################
-plot_target_predictions = None  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
-ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
+plot_target_predictions = 'pred.png'  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
+ML = 'KRR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'logo'                             # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
+CV = 'last'                             # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
 kfold = 2                             # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
@@ -51,9 +51,9 @@ group_test = 4                        # only used if CV='groups'. Note that grou
 logo_error_type = 'A'                 # only used if CV='logo'. Possible types: 'A', 'B' or 'C'
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [1.2]	  						  # hyperparameters with weights of d_el
-gamma_d  =  0.215  					  		  # hyperparameter with weight of d_fp_d
-gamma_a  =  0.115  	  				  		  # hyperparameter with weight of d_fp_a
+gamma_el = [1.0]	  						  # hyperparameters with weights of d_el
+gamma_d  =  1.0  					  		  # hyperparameter with weight of d_fp_d
+gamma_a  =  1.0  	  				  		  # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(1.00,2.00)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.111, 0.112)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.111, 0.112)         	  # range in which gamma_a is optimized

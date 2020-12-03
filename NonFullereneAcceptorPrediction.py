@@ -37,7 +37,7 @@ input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input fil
 ########################
 ########################
 def main():
-    # Read data
+    ########## Read data ##########
     df=pd.read_csv(db_file,index_col=0)
     # Preprocess data
     #df=preprocess_smiles(df) # (not needed, we're reading directly FP)
@@ -57,11 +57,11 @@ def main():
         X[i][0]=X_d
         X[i][1]=X_a
     X=preprocess_fn(X)
-    # Get optimimum hyperparameters
+    ########## Optimize hyperparameters ##########
     if optimize_hyperparams==True:
         fixed_hyperparams = []
         condition=None
-        # Use just structural descriptors
+        ########## Use just structural descriptors ##########
         for i in range(len(elec_descrip)):
             if gamma_el[i]==0.0:
                 condition = 'structure'
@@ -78,7 +78,7 @@ def main():
                     hyperparams = [gamma_d,gamma_a,C,epsilon]
                     bounds = [gamma_d_lim] + [gamma_a_lim] + [C_lim] + [epsilon_lim]
                 break
-        # Use just electronic (physical) descriptors
+        ########## Use just electronic (physical) descriptors ##########
         if gamma_d==0.0 and gamma_a==0.0 and condition != 'structure':
             condition='electronic'
             print('Optimize hyperparameters using only electronic (physical) descriptors')
@@ -93,7 +93,7 @@ def main():
             if ML=='SVR': 
                 hyperparams=[gamma_el,C,epsilon]
                 bounds = gamma_el_lim + [C_lim] + [epsilon_lim]
-        # Use both electronic and structural descriptors
+        ########## Use both electronic and structural descriptors ##########
         elif condition != 'structure':
             condition='structure_and_electronic'
             print('Optimize hyperparameters using both structural and electronic (physical) descriptors')
@@ -116,7 +116,7 @@ def main():
         print('Now starting ML')
         print('This may take several minutes')
         print('######################################')
-        # Set differential evolution parameters
+        ########## Set differential evolution parameters ##########
         if ML=='KRR' or ML=='SVR':
             # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
             fixed_hyperparams.append(False)
@@ -196,7 +196,7 @@ def main():
             if print_log==True: f_out.write('Best rmse: %s \n' %(str(total_best_rmse)))
             if print_log==True: f_out.write('#######################################\n')
             if print_log==True: f_out.flush()
-            # Once optimized hyperparams are found, do final calculation using those values
+            ########## Once optimized hyperparams are found, do final calculation using those values ##########
             if type(total_best_hyperparams) is list: 
                 hyperparams=total_best_hyperparams
             else:
@@ -213,7 +213,7 @@ def main():
             if print_log==True: f_out.flush()
             flat_hyperparams = hyperparams
             func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
-    ## Use initial hyperparameters
+    ########## If hyperparameters are not optimized ##########
     elif optimize_hyperparams==False:
         condition='structure_and_electronic'
         print('Hyperparameters are not being optimized')
@@ -251,6 +251,18 @@ def main():
 #############################
 #############################
 def read_initial_values(inp):
+    '''
+    Read input variables from input file
+
+    Parameters
+    ----------
+    inp: str
+        name of input file
+
+    Returns
+    -------
+    All global input values
+    '''
     # open input file
     input_file_name = inp
     f_in = open('%s' %input_file_name,'r')
@@ -478,7 +490,6 @@ def read_initial_values(inp):
 #### START preprocess_fn ####
 #############################
 #############################
-### Preprocess function to scale data ###
 def preprocess_fn(X):
     '''
     Function to preprocess raw data
@@ -537,8 +548,29 @@ def preprocess_fn(X):
 ### START custom_distance ###
 #############################
 #############################
-### Function to calculate custom metric for electronic and structural properties ###
 def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
+    '''
+    Function to calculate custom metric for electronic and structural properties
+
+    Parameters
+    ----------
+    X1: np.array
+        training data array
+    X2: np.array
+        training/testing data array
+    gamma_el: list
+        list containing all gamma_el values
+    gamma_d: float
+        value of gamma_d hyperparameter
+    gamma_a: float
+        value of gamma_a hyperparameter
+
+    Returns
+    -------
+    distance: float
+        value of distance between two points with custom metric
+    '''
+    #print('TEST X1, X2, gamma_el, gamma_d, gamma_a', type(X1),type(X2),type(gamma_el),type(gamma_d),type(gamma_a))
     d_el = []
     distance = 0.0
 
@@ -581,8 +613,29 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
 ####### START func_ML #######
 #############################
 #############################
-### ML Function to calculate rmse and r ###
 def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
+    '''
+    Assigns hyperparameters, generate ML objects and call appropriate training/testing functions
+
+    Parameters
+    ----------
+    hyperparams: list
+        list containing hyperparameters to be optimized
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+    condition: str
+        type of optimization indicating which descriptors are used (structure, electronic or both)
+    fixed_hyperparams: list
+        list containing hyperparameters not optimized
+
+    Returns
+    -------
+    rms: float
+        value of the error metric
+    '''
+    #print('TEST types:', type(hyperparams),type(X),type(y),type(condition),type(fixed_hyperparams))
     final_call = fixed_hyperparams[-1]
     ########## Assign hyperparameters ##########
     if condition=='structure':
@@ -623,20 +676,11 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     if ML=='kNN':
         neighbor_value=fixed_hyperparams[-2]
         ML_algorithm = KNeighborsRegressor(n_neighbors=neighbor_value, weights='distance', metric=custom_distance,metric_params={"gamma_el":gamma_el,"gamma_d":gamma_d,"gamma_a":gamma_a})
-        # Set dummy values for unused hyperparams
-        alpha   = None
-        C       = None
-        epsilon = None
     elif ML=='KRR':
         kernel = build_hybrid_kernel(gamma_el=gamma_el,gamma_d=gamma_d,gamma_a=gamma_a)
         ML_algorithm = KernelRidge(alpha=alpha, kernel=kernel)
-        # Set dummy values for unused hyperparams
-        C       = None
-        epsilon = None
     elif ML=='SVR':
         ML_algorithm = SVR(kernel=functools.partial(kernel_SVR, gamma_el=gamma_el, gamma_d=gamma_d, gamma_a=gamma_a), C=C, epsilon=epsilon)
-        # Set dummy values for unused hyperparams
-        alpha   = None
     #################################################################
     # Do LEAVE-ONE-GROUP-OUT (LOGO)
     if CV == 'logo':
@@ -681,7 +725,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_real, y_predicted, test_indeces, kNN_distances, kNN_error = last_val(X,y,ML_algorithm)
     #################################################################
     ########## Get prediction errors ##########
-    rms = get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a,alpha,C,epsilon)
+    rms = get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a)
     return rms 
 #############################
 #############################
@@ -695,6 +739,32 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 #############################
 #############################
 def kf_loo_cv(X,y,ML_algorithm):
+    '''
+    Function to calculate error metric using a k-fold or LOO cross-validation
+
+    Parameters
+    ----------
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    kNN_distances: list
+        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
+    kNN_error: list
+        kNN predictions errors (used to plot into 'plot_kNN_distances')
+    '''
+    #print('TEST types:', type(X),type(y),type(ML_algorithm))
     counter        = 0
     progress_count = 1
     y_real         = []
@@ -739,6 +809,7 @@ def kf_loo_cv(X,y,ML_algorithm):
         if prediction_csv_file_name != None:
             for i in test_index:
                 test_indeces.append(i)
+    #print('TEST types output:', type(y_real),type(y_predicted),type(kNN_distances),type(kNN_error))
     return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
 #############################
 #############################
@@ -752,6 +823,32 @@ def kf_loo_cv(X,y,ML_algorithm):
 #############################
 #############################
 def last_val(X,y,ML_algorithm):
+    '''
+    Function to calculate error metric using a last-N validation
+
+    Parameters
+    ----------
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    kNN_distances: list
+        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
+    kNN_error: list
+        kNN predictions errors (used to plot into 'plot_kNN_distances')
+    '''
+    #print('TEST types:', type(X),type(y),type(ML_algorithm))
     y_real        = []
     y_predicted   = []
     kNN_error     = []
@@ -787,6 +884,30 @@ def last_val(X,y,ML_algorithm):
 ###############################
 ###############################
 def groups_val_preprocess(X,y):
+    '''
+    Preprocess data for a novel-group validation
+
+    Parameters
+    ----------
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+
+    Returns
+    -------
+    X_train: list
+        contains descriptors of training subset
+    y_train: list
+        contains target property of training subset
+    X_test: list
+        contains descriptors of testing subset
+    y_test: list
+        contains target property of testing subset
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    '''
+    #print('TEST types input:', type(X),type(y))
     X_test       = []
     y_test       = []
     X_train      = []
@@ -811,6 +932,7 @@ def groups_val_preprocess(X,y):
     for i in range(len(X_test)):
         X_test[i] = X_test[i].tolist()
     y_train = [item for dummy in y_train for item in dummy ]
+    #print('TEST types output:', type(X_train),type(y_train),type(X_test),type(y_test),type(test_indeces))
     return X_train, y_train, X_test, y_test, test_indeces
 ###############################
 ###############################
@@ -824,6 +946,25 @@ def groups_val_preprocess(X,y):
 #############################
 #############################
 def groups_val_opt(X_train,y_train,ML_algorithm):
+    '''
+    Function to calculate error metric during hyperparameter optimization using a novel-group validation
+
+    Parameters
+    ----------
+    X_train: np.array
+        array containing descriptors
+    y_train: np.array
+        array containing target property
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    '''
     #print('TEST STARTING groups_val_opt')
     counter      = 0
     y_real       = []
@@ -868,10 +1009,42 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
 #############################
 #############################
 def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
+    '''
+    Function to calculate error metric using a novel-group validation, with already optimized hyperparams
+
+    Parameters
+    ----------
+    X_train: list
+        array containing descriptors of training subset
+    y_train: list
+        array containing target property of training subset
+    X_test: list
+        array containing descriptors of testing subset
+    y_test: list
+        array containing target property of testing subset
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    kNN_distances: list
+        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
+    kNN_error: list
+        kNN predictions errors (used to plot into 'plot_kNN_distances')
+    '''
+    #print('TEST types input:', type(X_train),type(y_train),type(X_test),type(y_test),type(ML_algorithm))
     y_real        = []
     y_predicted   = []
     kNN_error     = []
     kNN_distances = []
+    X_train=np.array(X_train)
+    y_train=np.array(y_train)
+    X_test=np.array(X_test)
+    y_test=np.array(y_test)
     y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
     # if kNN: calculate lists with kNN_distances and kNN_error
     if ML=='kNN':
@@ -886,6 +1059,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     y_real.append(y_test)
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
+    #print('TEST types output:',type(y_real),type(y_predicted),type(kNN_distances),type(kNN_error))
     return y_real, y_predicted, kNN_distances, kNN_error
 #############################
 #############################
@@ -899,6 +1073,30 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
 #############################
 #############################
 def logo_cv_opt(X,y,ML_algorithm):
+    '''
+    Function to calculate error metric during hyperparameter optimization using a LOGO cross-validation
+
+    Parameters
+    ----------
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    error_logo: float
+        weighted squared error used during LOGO
+    '''
+    #print('TEST types input:', type(X),type(y),type(ML_algorithm))
     rms_total    = 0.0
     error_logo   = 0.0
     y_real       = []
@@ -956,6 +1154,7 @@ def logo_cv_opt(X,y,ML_algorithm):
         print('y_predicted:', y_predicted)
     print('FINAL LOGO ERROR:', error_logo)
     print('####################################')
+    #print('TEST types output:',type(y_real),type(y_predicted),type(test_indeces),type(error_logo))
     return y_real, y_predicted, test_indeces, error_logo
 #############################
 #############################
@@ -969,6 +1168,34 @@ def logo_cv_opt(X,y,ML_algorithm):
 #############################
 #############################
 def logo_cv_final(X,y,ML_algorithm):
+    '''
+    Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
+
+    Parameters
+    ----------
+    X: np.array
+        array containing descriptors
+    y: np.array
+        array containing target property
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+
+    Returns
+    -------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    error_logo: np.float
+        weighted squared error used during LOGO
+    kNN_distances: list
+        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
+    kNN_error: list
+        kNN predictions errors (used to plot into 'plot_kNN_distances')
+    '''
+    #print('TEST types input:', type(X),type(y),type(ML_algorithm))
     error_logo    = 0.0
     y_real        = []
     y_predicted   = []
@@ -1021,6 +1248,7 @@ def logo_cv_final(X,y,ML_algorithm):
         print('error_logo',error_logo)
         #########################################
     print('FINAL LOGO ERROR:', error_logo)
+    #print('TEST types output:',type(y_real),type(y_predicted),type(test_indeces),type(error_logo),type(kNN_distances), type(kNN_error))
     return y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error
 #############################
 #############################
@@ -1033,7 +1261,39 @@ def logo_cv_final(X,y,ML_algorithm):
 ### START get_pred_errors ###
 #############################
 #############################
-def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a,alpha,C,epsilon):
+def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a):
+    '''
+    Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
+
+    Parameters
+    ----------
+    y_real: list
+        actual values of the target property
+    y_predicted: list
+        predicted values of the target property
+    test_indeces: list
+        indeces of points predicted (used to print into 'prediction_csv_file_name')
+    error_logo: np.float
+        weighted squared error used during LOGO
+    total_N: int
+        number of points in all groups used in LOGO
+    final_call: bool
+        whether this is the last call (for optimized hyperparams) or not
+    ML_algorithm: sklearn object
+        object containing the ML model structure
+    gamma_el: list
+        list containing all gamma_el values
+    gamma_d: float
+        value of gamma_d hyperparameter
+    gamma_a: float
+        value of gamma_a hyperparameter
+
+    Returns
+    -------
+    rms: float
+        value of the error metric
+    '''
+    #print('TEST types input:', type(y_real),type(y_predicted),type(test_indeces),type(error_logo),type(total_N),type(final_call),type(ML_algorithm),type(gamma_el),type(gamma_d),type(gamma_a))
     #################################################################
     # Put real and predicted values in 1D lists
     y_real = [item for dummy in y_real for item in dummy ]
@@ -1106,6 +1366,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
         if ML=='KRR': f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         if ML=='SVR': f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         f_out.flush()
+    #print('TEST types output:',type(rms))
     return rms
 #############################
 #############################
@@ -1119,6 +1380,26 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
 #############################
 #############################
 def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
+    '''
+    Function to compute a hybrid gaussian/Tanimoto kernel (SVR).
+    Parameters
+    ----------
+    _x1: np.array.
+        data point.
+    _x2: np.array.
+        data point.
+    gamma_el: list
+        list containing all gamma_el values
+    gamma_d: float
+        value of gamma_d hyperparameter
+    gamma_a: float
+        value of gamma_a hyperparameter
+    Returns
+    -------
+    K: np.array.
+        Kernel matrix element.
+    '''
+    #print('TEST types input:',type(_x1), type(_x2), type(gamma_el), type(gamma_d), type(gamma_a))
     #print('TEST call to SVR kernel')
     # Initialize kernel values
     K_el   = []
@@ -1213,6 +1494,7 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     K = K * K_fp_d * K_fp_a
     #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
     #print('K just before return:', K)
+    #print('TEST types output:',type(K))
     return K
 #############################
 #############################
@@ -1228,7 +1510,8 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
 ### KRR Kernel function ###
 def gaussian_kernel(Xi, Xj, gamma):
     '''
-    Function to compute a gaussian kernel.
+    Function to compute a gaussian kernel (KRR).
+    Based on Daniele's function
 
     Parameters
     ----------
@@ -1244,6 +1527,10 @@ def gaussian_kernel(Xi, Xj, gamma):
     K: np.array.
         Kernel matrix.
     '''
+    #print('##################################################')
+    #print('TEST Xi', Xi)
+    #print('TEST Xj', Xj)
+    #print('##################################################')
 
     m1 = Xi.shape[0]
     m2 = Xi.shape[0]
@@ -1251,8 +1538,22 @@ def gaussian_kernel(Xi, Xj, gamma):
     X1 = np.repeat(X1, m2, axis=1)
     X2 = Xj[np.newaxis,:,:]
     X2 = np.repeat(X2, m1, axis=0)
+    #print('##################################################')
+    #print('TEST Xi', X1)
+    #print('TEST Xj', X2)
+    #print('##################################################')
     D2 = np.sum((X1 - X2)**2, axis=2)
     K = np.exp(-gamma * D2)
+
+    #Xi = Xi[0]
+    #Xj = Xj[0]
+    #print('##################################################')
+    #print('TEST Xi', Xi)
+    #print('TEST Xj', Xj)
+    #print('##################################################')
+    #D2 = np.sum((Xi - Xj)**2)
+    #K = np.exp(-gamma * D2)
+
 
     return K
 #############################
@@ -1269,7 +1570,8 @@ def gaussian_kernel(Xi, Xj, gamma):
 ### KRR Kernel function ###
 def tanimoto_kernel(Xi, Xj, gamma):
     '''
-    Function to compute a Tanimoto kernel.
+    Function to compute a Tanimoto kernel (KRR).
+    Based on Daniele's function
 
     Parameters
     ----------
@@ -1312,9 +1614,7 @@ def tanimoto_kernel(Xi, Xj, gamma):
 # START build_hybrid_kernel #
 #############################
 #############################
-### KRR Kernel function ###
 def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
-    #print('TEST call to KRR kernel build_hybrid_kernel')
     '''
     Parameters
     ----------
@@ -1332,9 +1632,9 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
     '''
 
     def hybrid_kernel(_x1, _x2):
-        #print('TEST call to KRR kernel hybrid_kernel')
         '''
-        Function to compute a hybrid gaussian/Tanimoto.
+        Function to compute a hybrid gaussian/Tanimoto (KRR).
+        Based on Daniele's function
 
         Parameters
         ----------
@@ -1413,6 +1713,21 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
 #############################
 ### visualization and calculate pearsonr and spearmanr ###
 def plot_scatter(x, y, plot_type, plot_name):
+    '''
+    Print 2D scatter plots
+
+    Parameters
+    ----------
+    x: np.array
+        array with data wht will be plotted in x axis
+    y: np.array
+        array with data wht will be plotted in y axis
+    plot_type: str
+        flag indicating type of 2D scatter plot
+    plot_name: str
+        name of png file to plot figure
+    '''
+    #print('TEST types input:',type(x),type(y),type(plot_type),type(plot_name))
     # general plot options
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
@@ -1484,18 +1799,36 @@ def plot_scatter(x, y, plot_type, plot_name):
 #############################
 #############################
 def squared_error(x1,x2):
+    '''
+    Function to calculate the squared error of two arrays
+
+    Parameters
+    ----------
+    x1: np.array
+        data array
+    x2: np.array
+        data array
+
+    Returns
+    -------
+    sq_error: np.float
+        squared error value
+    '''
+    #print('TEST types input', type(x1), type(x2))
     if len(x1) != len(x2): # sanity check
         print('ERROR: length of predicted and real values does not have the same length')
         sys.exit()
     sq_error = 0.0
     for i in range(len(x1)):
         sq_error = sq_error + (x1[i]-x2[i])**2
+    #print('TEST types output', type(sq_error))
     return sq_error
 #############################
 #############################
 ##### END squared_error #####
 #############################
 #############################
+
 
 #########################################################
 ################### Read input values ###################
@@ -1512,7 +1845,6 @@ predict_unknown, logo_error_type) = read_initial_values(input_file_name)
 ################# Execute main function ##################
 ##########################################################
 if __name__ == '__main__':
-    #main(alpha,gamma_el,gamma_d,gamma_a,C,epsilon,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim)
     main()
 ###########################################################
 ########## Print running time and close log file ##########
