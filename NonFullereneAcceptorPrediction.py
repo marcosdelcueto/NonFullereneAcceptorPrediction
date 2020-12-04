@@ -2,6 +2,7 @@
 # Marcos del Cueto
 # Department of Chemistry and Materials Innovation Factory, University of Liverpool
 # For any queries about the code: m.del-cueto@liverpool.ac.uk
+# Warning: be careful when using more than one gamma_el: not tested with new cross-validations
 #################################################################################
 import re
 import sys
@@ -12,7 +13,6 @@ import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, gridspec, cm
-#from math import sqrt
 from time import time
 from scipy.optimize import differential_evolution
 from scipy.stats import pearsonr, spearmanr
@@ -84,10 +84,10 @@ def main():
             if ML=='kNN': 
                 hyperparams=[gamma_el]
                 bounds = gamma_el_lim
-            if ML=='KRR': 
+            elif ML=='KRR': 
                 hyperparams=[gamma_el,alpha]
                 bounds = gamma_el_lim + [alpha_lim]
-            if ML=='SVR': 
+            elif ML=='SVR': 
                 hyperparams=[gamma_el,C,epsilon]
                 bounds = gamma_el_lim + [C_lim] + [epsilon_lim]
         ########## Use both electronic and structural descriptors ##########
@@ -99,10 +99,10 @@ def main():
             if ML=='kNN':
                 hyperparams=[gamma_el,gamma_d,gamma_a]
                 bounds = gamma_el_lim + [gamma_d_lim] + [gamma_a_lim]
-            if ML=='KRR':
+            elif ML=='KRR':
                 hyperparams=[gamma_el,gamma_d,gamma_a,alpha]
                 bounds = gamma_el_lim + [gamma_d_lim] + [gamma_a_lim] + [alpha_lim]
-            if ML=='SVR':
+            elif ML=='SVR':
                 hyperparams=[gamma_el,gamma_d,gamma_a,C,epsilon]
                 bounds = gamma_el_lim + [gamma_d_lim] + [gamma_a_lim] + [C_lim] + [epsilon_lim]
         # Print some info before running ML
@@ -126,20 +126,22 @@ def main():
             print('Best hyperparameters:',best_hyperparams)
             print('Best rmse:', best_rmse)
             print('#######################################')
-            if print_log==True: f_out.write('#######################################\n')
-            if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(best_hyperparams)))
-            if print_log==True: f_out.write('Best rmse: %s \n' %(str(best_rmse)))
-            if print_log==True: f_out.write('#######################################\n')
-            if print_log==True: f_out.flush()
+            if print_log==True: 
+                f_out.write('#######################################\n')
+                f_out.write('Best hyperparameters: %s \n' %(str(best_hyperparams)))
+                f_out.write('Best rmse: %s \n' %(str(best_rmse)))
+                f_out.write('#######################################\n')
+                f_out.flush()
             # Once optimized hyperparams are found, do final calculation using those values
             hyperparams=best_hyperparams.tolist()
             print('###############################################')
             print('Doing final call with optimized hyperparameters')
             print('###############################################')
-            if print_log==True: f_out.write('###############################################\n')
-            if print_log==True: f_out.write('Doing final call with optimized hyperparameters\n')
-            if print_log==True: f_out.write('###############################################\n')
-            if print_log==True: f_out.flush()
+            if print_log==True: 
+                f_out.write('###############################################\n')
+                f_out.write('Doing final call with optimized hyperparameters\n')
+                f_out.write('###############################################\n')
+                f_out.flush()
             flat_hyperparams = hyperparams
             # Change final_call=True in fixed_hyperparameters, to indicate that it is final ML call to calculate rmse of novel group (only relevant if CV='groups')
             fixed_hyperparams[-1]=True
@@ -164,7 +166,7 @@ def main():
                             total_best_hyperparams = best_hyperparams
                             total_best_rmse = best_rmse
                             best_k = Neighbors[k]
-                if condition=='structure' or condition=='structure_and_electronic':
+                elif condition=='structure' or condition=='structure_and_electronic':
                     fixed_hyperparams.append(Neighbors[k])
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
@@ -187,12 +189,13 @@ def main():
             print('Best kNN, k =', best_k)
             print('Best rmse:', total_best_rmse)
             print('#######################################')
-            if print_log==True: f_out.write('#######################################\n')
-            if print_log==True: f_out.write('Best hyperparameters: %s \n' %(str(total_best_hyperparams)))
-            if print_log==True: f_out.write('Best kNN, k = : %i \n' %(best_k))
-            if print_log==True: f_out.write('Best rmse: %s \n' %(str(total_best_rmse)))
-            if print_log==True: f_out.write('#######################################\n')
-            if print_log==True: f_out.flush()
+            if print_log==True: 
+                f_out.write('#######################################\n')
+                f_out.write('Best hyperparameters: %s \n' %(str(total_best_hyperparams)))
+                f_out.write('Best kNN, k = : %i \n' %(best_k))
+                f_out.write('Best rmse: %s \n' %(str(total_best_rmse)))
+                f_out.write('#######################################\n')
+                f_out.flush()
             ########## Once optimized hyperparams are found, do final calculation using those values ##########
             if type(total_best_hyperparams) is list: 
                 hyperparams=total_best_hyperparams
@@ -204,10 +207,11 @@ def main():
             print('###############################################')
             print('Doing final call with optimized hyperparameters')
             print('###############################################')
-            if print_log==True: f_out.write('###############################################\n')
-            if print_log==True: f_out.write('Doing final call with optimized hyperparameters\n')
-            if print_log==True: f_out.write('###############################################\n')
-            if print_log==True: f_out.flush()
+            if print_log==True: 
+                f_out.write('###############################################\n')
+                f_out.write('Doing final call with optimized hyperparameters\n')
+                f_out.write('###############################################\n')
+                f_out.flush()
             flat_hyperparams = hyperparams
             func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
     ########## If hyperparameters are not optimized ##########
@@ -224,16 +228,18 @@ def main():
         print('######################################')
         if print_log==True: f_out.write('Hyperparameters are not being optimized \n')
         fixed_hyperparams = []
-        if ML=='kNN' and len(Neighbors)>1:
-            print('ERROR: Not optimizing parameters, but more than one possible value in "Neighbors" for kNN')
-            sys.exit()
-        if ML=='kNN': 
+        if ML=='kNN':
+            if len(Neighbors)>1:
+                print('ERROR: Not optimizing parameters, but more than one possible value in "Neighbors" for kNN')
+                sys.exit()
             hyperparams=[gamma_el,gamma_d,gamma_a]
             fixed_hyperparams.append(Neighbors[-1])
+        elif ML=='KRR': 
+            hyperparams=[gamma_el,gamma_d,gamma_a,alpha]
+        elif ML=='SVR': 
+            hyperparams=[gamma_el,gamma_d,gamma_a,C,epsilon]
         # Add final_call=True in fixed_hyperparameters, to indicate that it is final ML call to calculate rmse of novel group (only relevant if CV='groups')
         fixed_hyperparams.append(True)
-        if ML=='KRR': hyperparams=[gamma_el,gamma_d,gamma_a,alpha]
-        if ML=='SVR': hyperparams=[gamma_el,gamma_d,gamma_a,C,epsilon]
         flat_hyperparams = hyperparams[0] + hyperparams[1:]
         func_ML(flat_hyperparams,X,y,condition,fixed_hyperparams)
 ######################
@@ -376,9 +382,11 @@ def read_initial_values(inp):
     print('ML =', ML)
     print('### Cross Validation #################')
     print('CV =', CV)
-    if CV == 'kf': print('kfold =', kfold)
-    if CV == 'last': print('Nlast =', Nlast)
-    if CV == 'groups' or CV=='logo':
+    if CV == 'kf':
+        print('kfold =', kfold)
+    elif CV == 'last': 
+        print('Nlast =', Nlast)
+    elif CV == 'groups' or CV=='logo':
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
@@ -443,9 +451,11 @@ def read_initial_values(inp):
         f_out.write('### Cross Validation #################\n')
         f_out.write('CV %s\n' % str(CV))
 
-        if CV=='kf': f_out.write('kfold %s\n' % str(kfold))
-        if CV=='last': f_out.write('Nlast %s\n' % str(Nlast))
-        if CV=='groups' or CV=='logo':
+        if CV=='kf': 
+            f_out.write('kfold %s\n' % str(kfold))
+        elif CV=='last': 
+            f_out.write('Nlast %s\n' % str(Nlast))
+        elif CV=='groups' or CV=='logo':
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
@@ -527,7 +537,6 @@ def preprocess_fn(X):
         X_el = xscaler.fit_transform(X_el) # scale electronic descriptors
         ########## Add label and the rest of scaled values into X_el ##########
         new_X_el = []
-        print('TEST elec_descrip_total', elec_descrip_total)
         for i in range(Ndata):
             new_list = []
             new_list.append(save_X_el[i][0])      # add label (stored in save_X_el) to new_list
@@ -574,6 +583,10 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
     distance: float
         value of distance between two points with custom metric
     '''
+    # sanity check
+    if X1.ndim != 1 or X2.ndim != 1:
+        print('ERROR: Custom metric was expecting 1D vectors!')
+        sys.exit()
     # Calculate distances for FP
     elec_descrip_total=0
     for k in elec_descrip:
@@ -689,6 +702,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
         ########## Do LOGO ##########
         if final_call == False:
+            kNN_distances = []
+            kNN_error     = []
             y_real, y_predicted, test_indeces, error_logo = logo_cv_opt(X,y,ML_algorithm)
         if final_call == True:
             y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error = logo_cv_final(X,y,ML_algorithm)
@@ -702,16 +717,18 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             ########## Preprocess novel-group validation ##########
             X_train, y_train, X_test, y_test, test_indeces = groups_val_preprocess(X,y)
             ########## Do novel-group validation ##########
-            if final_call == True:
-                y_real, y_predicted, kNN_distances, kNN_error = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
-            elif final_call == False:
+            if final_call == False:
+                kNN_distances = []
+                kNN_error     = []
                 y_real, y_predicted = groups_val_opt(X_train, y_train,ML_algorithm)
+            elif final_call == True:
+                y_real, y_predicted, kNN_distances, kNN_error = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
         #################################################################
         # Do regular cross-validation
         elif CV == 'kf' or CV == 'loo':
             y_real, y_predicted, test_indeces, kNN_distances, kNN_error = kf_loo_cv(X,y,ML_algorithm)
         #################################################################
-        # Do last X% validation
+        # Do last-N validation
         elif CV =='last':
             y_real, y_predicted, test_indeces, kNN_distances, kNN_error = last_val(X,y,ML_algorithm)
     #################################################################
@@ -755,7 +772,6 @@ def kf_loo_cv(X,y,ML_algorithm):
     kNN_error: list
         kNN predictions errors (used to plot into 'plot_kNN_distances')
     '''
-    #print('TEST types:', type(X),type(y),type(ML_algorithm))
     counter        = 0
     progress_count = 1
     y_real         = []
@@ -958,18 +974,15 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     # For novel-group validation, we need to minimize RMSE of validation group within Train
     X_train = np.array(X_train)
     y_train = np.array(y_train)
-    loo = LeaveOneOut()
-    validation=loo.split(X_train)
-    y_total_pred = []
+    cv = LeaveOneOut()
+    #cv = KFold(n_splits=kfold,shuffle=True)
     y_total_valid = []
-    for train_index, valid_index in validation:
+    for train_index, valid_index in cv.split(X_train):
         X_new_train,X_new_valid=X_train[train_index],X_train[valid_index]
         y_new_train,y_new_valid=y_train[train_index],y_train[valid_index]
         y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
-        y_total_valid.append(y_new_valid)
-        y_total_pred.append(y_pred)
-    # add predicted values in this LOO to list with total
-    y_predicted.append(y_total_pred)
+        y_total_valid.append(y_new_valid.tolist())
+        y_predicted.append(y_pred.tolist())
     y_real.append(y_total_valid)
     return y_real, y_predicted
 #############################
@@ -1024,8 +1037,8 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     y_real.append(y_test)
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
-    # if kNN: calculate lists with kNN_distances and kNN_error
-    if ML=='kNN':
+    # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
+    if ML=='kNN' and plot_kNN_distances != None:
         provi_kNN_dist=ML_algorithm.kneighbors(X_test)
         for i in range(len(provi_kNN_dist[0])):
             kNN_dist=np.mean(provi_kNN_dist[0][i])
@@ -1069,7 +1082,6 @@ def logo_cv_opt(X,y,ML_algorithm):
     error_logo: float
         weighted squared error used during LOGO
     '''
-    #print('TEST types input:', type(X),type(y),type(ML_algorithm))
     rms_total    = 0.0
     error_logo   = 0.0
     y_real       = []
@@ -1086,6 +1098,7 @@ def logo_cv_opt(X,y,ML_algorithm):
                 X_train = []
                 y_train = []
                 print('##### Sub n=%i group' %n)
+                # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
                 for i in range(len(X)):
                     if X[i][0] in groups_acceptor_labels[n]:
                         new_X = np.delete(X[i],0)
@@ -1100,12 +1113,11 @@ def logo_cv_opt(X,y,ML_algorithm):
                 X_train = np.array(X_train)
                 y_train = np.array(y_train)
                 X_test  = np.array(X_test)
-                y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+                y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
                 # Add predicted values in this LOO to list with total
-                y_predicted.append(y_pred.tolist())
+                y_predicted.append(y_pred)
                 y_real.append(y_test)
                 #########################################
-                y_pred = [item for sublist in y_pred.tolist() for item in sublist]
                 y_test = [item for sublist in y_test for item in sublist]
                 # Weight A
                 if logo_error_type == 'A':
@@ -1122,11 +1134,7 @@ def logo_cv_opt(X,y,ML_algorithm):
                 error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
                 print('Error logo',error_logo)
                 #########################################
-        print('####################################')
-        print('y_real:', y_real)
-        print('y_predicted:', y_predicted)
     print('FINAL LOGO ERROR:', error_logo)
-    print('####################################')
     return y_real, y_predicted, test_indeces, error_logo
 #############################
 #############################
@@ -1181,6 +1189,7 @@ def logo_cv_final(X,y,ML_algorithm):
         print('############')
         print('MAIN M GROUP', m)
         print('############')
+        # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
         for i in range(len(X)):
             if X[i][0] in groups_acceptor_labels[m]:
                 new_X = np.delete(X[i],0)
@@ -1207,8 +1216,8 @@ def logo_cv_final(X,y,ML_algorithm):
         error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
         print('error_logo',error_logo)
         #########################################
-        # if kNN: calculate lists with kNN_distances and kNN_error
-        if ML=='kNN':
+        # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN' and plot_kNN_distances != None:
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
@@ -1269,10 +1278,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
-    if final_call==False and ( CV == 'groups' or CV == 'logo' ):
-        y_predicted = [item for dummy in y_predicted for item in dummy ]
-    elif final_call==True:
-        y_predicted = y_predicted
     # Calculate rmse, r and rho
     if weight_RMSE == 'PCE2':
         weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
@@ -1296,7 +1301,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
     #######################################
-    if prediction_csv_file_name != None:
+    if prediction_csv_file_name != None and final_call==True:
         df=pd.read_csv(db_file,index_col=0)
         counter_i = 0
         data=[]
@@ -1312,9 +1317,9 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
             counter_i = counter_i+1
     #######################################
     # Print plots
-    if plot_target_predictions != None:
+    if plot_target_predictions != None and final_call==True:
         plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
-    if ML=='kNN' and plot_kNN_distances != None:
+    if ML=='kNN' and plot_kNN_distances != None and final_call==True:
         kNN_distances = np.array(kNN_distances)
         kNN_error = [item for dummy in kNN_error for item in dummy]
         kNN_error = np.array(kNN_error)
@@ -1324,14 +1329,20 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
         r=0.0
         rms=0.0
     print('New', ML, 'call:')
-    if ML=='kNN': print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
-    if ML=='KRR': print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
-    if ML=='SVR': print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    if ML=='kNN': 
+        print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    elif ML=='KRR': 
+        print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+    elif ML=='SVR': 
+        print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
     if print_log==True:
         f_out.write('New %s call: \n' %(ML))
-        if ML=='kNN': f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-        if ML=='KRR': f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
-        if ML=='SVR': f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        if ML=='kNN': 
+            f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        elif ML=='KRR': 
+            f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+        elif ML=='SVR': 
+            f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         f_out.flush()
     return rms
 #############################
@@ -1363,7 +1374,7 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     Returns
     -------
     K: np.array.
-        Kernel matrix element.
+        Kernel matrix.
     '''
     # Initialize kernel values
     K_el   = []
@@ -1417,7 +1428,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         Xii_d = np.repeat(np.linalg.norm(Xi_fp_d, axis=1, keepdims=True)**2, size_matrix2, axis=1)
         Xjj_d = np.repeat(np.linalg.norm(Xj_fp_d, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
         T_d = np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T))
-        #print('Tanimoto D')
         D_fp_d  = 1 - T_d
         D2_fp_d = np.square(D_fp_d)
         K_fp_d = np.exp(-gamma_d*D2_fp_d)
@@ -1444,7 +1454,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         K_fp_a = np.exp(-gamma_a*D2_fp_a)
     # Calculate final kernel
     K = K * K_fp_d * K_fp_a
-    #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
     return K
 #############################
 #############################
@@ -1457,7 +1466,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
 ### START gaussian_kernel ###
 #############################
 #############################
-### KRR Kernel function ###
 def gaussian_kernel(Xi, Xj, gamma):
     '''
     Function to compute a gaussian kernel (KRR).
@@ -1474,24 +1482,25 @@ def gaussian_kernel(Xi, Xj, gamma):
 
     Returns
     -------
-    K: np.array.
-        Kernel matrix.
+    K: np.float.
+        Kernel matrix element.
     '''
-
-    m1 = Xi.shape[0]
-    m2 = Xi.shape[0]
-    X1 = Xi[:,np.newaxis,:]
-    X1 = np.repeat(X1, m2, axis=1)
-    X2 = Xj[np.newaxis,:,:]
-    X2 = np.repeat(X2, m1, axis=0)
-    D2 = np.sum((X1 - X2)**2, axis=2)
-    K = np.exp(-gamma * D2)
-
-    #Xi = Xi[0]
-    #Xj = Xj[0]
-    #D2 = np.sum((Xi - Xj)**2)
+    #############################
+    # Daniele's - (sanity check):
+    #m1 = Xi.shape[0]
+    #m2 = Xi.shape[0]
+    #X1 = Xi[:,np.newaxis,:]
+    #X1 = np.repeat(X1, m2, axis=1)
+    #X2 = Xj[np.newaxis,:,:]
+    #X2 = np.repeat(X2, m1, axis=0)
+    #D2 = np.sum((X1 - X2)**2, axis=2)
     #K = np.exp(-gamma * D2)
-
+    #############################
+    # Alternative (gives same result, if Xi and Xj are just 1 vector):
+    Xi = Xi[0]
+    Xj = Xj[0]
+    D2 = np.sum((Xi - Xj)**2)
+    K = np.exp(-gamma * D2)
     return K
 #############################
 #############################
@@ -1504,7 +1513,6 @@ def gaussian_kernel(Xi, Xj, gamma):
 ### START tanimoto_kernel ###
 #############################
 #############################
-### KRR Kernel function ###
 def tanimoto_kernel(Xi, Xj, gamma):
     '''
     Function to compute a Tanimoto kernel (KRR).
@@ -1521,18 +1529,23 @@ def tanimoto_kernel(Xi, Xj, gamma):
 
     Returns
     -------
-    K: np.array.
-        Kernel matrix.
+    K: np.float.
+        Kernel matrix element.
     '''
-
-
-    m1 = Xi.shape[0]
-    m2 = Xj.shape[0]
-    Xii = np.repeat(np.linalg.norm(Xi, axis=1, keepdims=True)**2, m2, axis=1)
-    Xjj = np.repeat(np.linalg.norm(Xj, axis=1, keepdims=True).T**2, m1, axis=0)
-    T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
+    #############################
+    # Daniele's - (sanity check):
+    #m1 = Xi.shape[0]
+    #m2 = Xj.shape[0]
+    #Xii = np.repeat(np.linalg.norm(Xi, axis=1, keepdims=True)**2, m2, axis=1)
+    #Xjj = np.repeat(np.linalg.norm(Xj, axis=1, keepdims=True).T**2, m1, axis=0)
+    #T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
+    #K = np.exp(-gamma * (1 - T)**2)
+    #############################
+    # Alternative (gives same result, if Xi and Xj are just 1 vector):
+    Xi = Xi[0]
+    Xj = Xj[0]
+    T = ( np.dot(np.transpose(Xi),Xj) ) / ( np.dot(np.transpose(Xi),Xi) + np.dot(np.transpose(Xj),Xj) - np.dot(np.transpose(Xi),Xj) )
     K = np.exp(-gamma * (1 - T)**2)
-
     return K
 #############################
 #############################
@@ -1576,9 +1589,13 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
 
         Returns
         -------
-        K: np.array.
+        K: np.float.
             Kernel matrix element.
         '''
+        # sanity check
+        if _x1.ndim != 1 or _x2.ndim != 1:
+            print('ERROR: KRR kernel was expecting 1D vectors!')
+            sys.exit()
         # Split electronic data from fingerprints
         elec_descrip_total=0
         for k in elec_descrip:
@@ -1680,7 +1697,7 @@ def plot_scatter(x, y, plot_type, plot_name):
 
         m, b = np.polyfit(x, y, 1)
         ax.plot(x, m*x + b,color="k",linewidth=3)
-        print('m:', m, 'b:', b)
+        #print('m:', m, 'b:', b)
 
         ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=18)
         ax.annotate(u'$rmse$ = %.2f' % rmse, xy=(0.15,0.75), xycoords='axes fraction', size=18)
@@ -1730,14 +1747,12 @@ def squared_error(x1,x2):
     sq_error: np.float
         squared error value
     '''
-    #print('TEST types input', type(x1), type(x2))
     if len(x1) != len(x2): # sanity check
         print('ERROR: length of predicted and real values does not have the same length')
         sys.exit()
     sq_error = 0.0
     for i in range(len(x1)):
         sq_error = sq_error + (x1[i]-x2[i])**2
-    #print('TEST types output', type(sq_error))
     return sq_error
 #############################
 #############################
