@@ -1,14 +1,19 @@
 # Non-Fullerene Acceptor Prediction
 This repository contains the database and code for **Can machine learning methods predict non-fullerene acceptors for organic solar cells with completely new chemistries?** by _Z-W Zhao, M del Cueto and A Troisi_
 
-Code is based in our previous [MLPhotovoltaics](https://github.com/marcosdelcueto/MachineLearning_AcceptorDonor) program, with the main addition of performing _novel-group validation_.
+Code is based in our previous [MLPhotovoltaics](https://github.com/marcosdelcueto/MachineLearning_AcceptorDonor) program, with the main addition of performing _novel-group validation_ and _leave-one-group-out_ cross-validation.
 
-Options for this novel-group validation are controlled in input file:
+Options for the **novel-group validation** are controlled in input file:
 - **CV='groups'**
 - **acceptor\_label\_column**: allows to set the name of the column that contains the acceptor labels
 - **groups\_acceptor\_labels**: allows to assign pairs whose acceptor has a specific label to a group
 - **group\_test**: select which of the previous groups is used as test. The rest will be used as training
 
+Options for the **leave-one-group-out cross-validation** are controlled in input file:
+- **CV='logo'**
+- **acceptor\_label\_column**: allows to set the name of the column that contains the acceptor labels
+- **groups\_acceptor\_labels**: allows to assign pairs whose acceptor has a specific label to a group
+- **logo_error_type**: select type of weighting used during logo cross-validation (see SI for more info)
 ---
 
 ## Prerequisites
@@ -29,11 +34,11 @@ All input parameters are specified in file: **inputNonFullereneAcceptorPredictio
 To execute program, make sure that you have all necessary python packages installed, and that all necessary files are present: the database (**database.csv**), input file (**inputNonFullereneAcceptorPrediction.inp**) and program (**NonFullereneAcceptorPrediction.py**). Finally, simply run:
 
 ```
-./NonFullereneAcceptorPrediction.py
+python NonFullereneAcceptorPrediction.py
 ```
 
 ---
 
-### Contributors
+### Authors
 
-[Zhi-Wen Zhao](https://github.com/amiswen) and [Marcos del Cueto](https://github.com/marcosdelcueto)
+Zhi-Wen Zhao, Marcos del Cueto and Alessandro Troisi

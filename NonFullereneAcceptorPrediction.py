@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, gridspec, cm
-from math import sqrt
+#from math import sqrt
 from time import time
 from scipy.optimize import differential_evolution
 from scipy.stats import pearsonr, spearmanr
@@ -40,10 +40,7 @@ def main():
     ########## Read data ##########
     df=pd.read_csv(db_file,index_col=0)
     # Preprocess data
-    #df=preprocess_smiles(df) # (not needed, we're reading directly FP)
-    #print('xcols:',xcols)
     xcols_flat = [item for sublist in xcols for item in sublist]
-    #print('xcols:',xcols)
     X=df[xcols_flat].values
     y=df[ycols].values
     for i in range(Ndata):
@@ -309,7 +306,7 @@ def read_initial_values(inp):
     for i in range(number_elec_descrip):
         xcols.append(ast.literal_eval(var_value[var_name.index('xcols_elec'+str(i))]))              # specify which descriptors are used
         elec_descrip.append(len(xcols[i+1]))
-    # If we are using CV='groups', add temporarily the AcceptorLabel descriptor to identify each group
+    # If we are using CV='groups' or CV='logo', add temporarily the AcceptorLabel descriptor to identify each group
     if CV=='groups' or CV=='logo':
         for i in range(len(xcols)):
             if i==1:
@@ -493,6 +490,7 @@ def read_initial_values(inp):
 def preprocess_fn(X):
     '''
     Function to preprocess raw data
+    Re-arranges X and scales electronic descriptors
 
     Parameters
     ----------
@@ -504,38 +502,44 @@ def preprocess_fn(X):
     X: np.array.
         processed data array.
     '''
+    ########## Initialize lists ##########
     X_el=[[] for j in range(Ndata)]
     X_fp_d=[]
     X_fp_a=[]
+    ########## Calculate number of electronic descriptors (including label)  ##########
     elec_descrip_total=0
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
+    ########## Separate X into X_fp_d, X_fp_a and X_el ##########
     for i in range(Ndata):
         X_fp_d.append(X[i][0])
         X_fp_a.append(X[i][1])
         for j in range(2,elec_descrip_total+2):
             X_el[i].append(X[i][j])
+    ########## Set up scaler ##########
     save_X_el = list(X_el[:])
     xscaler = StandardScaler()
+    ########## For groups and logo ##########
     if CV == 'groups' or CV=='logo':
+        ########## Transform X_el using scaler (except label) ##########
         for i in range(Ndata):
-            X_el[i] = X_el[i][1:]
-        X_el = xscaler.fit_transform(X_el)
+            X_el[i] = X_el[i][1:]          # drop label for scaling
+        X_el = xscaler.fit_transform(X_el) # scale electronic descriptors
+        ########## Add label and the rest of scaled values into X_el ##########
         new_X_el = []
-        total_elec_descrip = 0
-        for j in range(len(elec_descrip)):
-            total_elec_descrip = total_elec_descrip + elec_descrip[j]
+        print('TEST elec_descrip_total', elec_descrip_total)
         for i in range(Ndata):
             new_list = []
-            new_list.append(save_X_el[i][0])
-            for j in range(total_elec_descrip-1):
-                new_list.append(X_el[i][j])
-            new_X_el.append(new_list)
-        X_el = list(new_X_el)
+            new_list.append(save_X_el[i][0])      # add label (stored in save_X_el) to new_list
+            for j in range(elec_descrip_total-1):
+                new_list.append(X_el[i][j])       # add scaled electronic descriptors (styored in X_el) to new_list
+            new_X_el.append(new_list)             # create new_X_el by adding new_lists
+        X_el = list(new_X_el)                     # rename new_X_el as X_el
+    ########## For kf, loo and last ##########
     else:
         X_el = xscaler.fit_transform(X_el)
+    ########## Put together final X combining X_el, X_fp_d and X_fp_a
     X = np.c_[ X_el,X_fp_d,X_fp_a]
-
     return X
 #############################
 #############################
@@ -570,10 +574,6 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
     distance: float
         value of distance between two points with custom metric
     '''
-    #print('TEST X1, X2, gamma_el, gamma_d, gamma_a', type(X1),type(X2),type(gamma_el),type(gamma_d),type(gamma_a))
-    d_el = []
-    distance = 0.0
-
     # Calculate distances for FP
     elec_descrip_total=0
     for k in elec_descrip:
@@ -585,19 +585,14 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
     d_fp_d = 1 - T_d
     d_fp_a = 1 - T_a
 
-    distance = distance + gamma_d*d_fp_d + gamma_a*d_fp_a
+    distance = gamma_d*d_fp_d + gamma_a*d_fp_a
 
     # Calculate distance for electronic properties
     ini = 0
     fin = elec_descrip[0]
     for j in range(len(elec_descrip)):
-        d_el.append(0.0)
-        for i in range(ini,fin):
-            d_el[j] = d_el[j] + (X1[i]-X2[i])**2
-        d_el[j] = d_el[j]**(1.0/2.0)
-
-        distance = distance + gamma_el[j] * d_el[j]
-
+        d_el = math.sqrt(np.sum((X1[ini:fin]-X2[ini:fin])**2))
+        distance = distance + gamma_el[j] * d_el
         if j < len(elec_descrip)-1:
             ini = elec_descrip[j]
             fin = elec_descrip[j] + elec_descrip[j+1]
@@ -635,14 +630,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
     rms: float
         value of the error metric
     '''
-    #print('TEST types:', type(hyperparams),type(X),type(y),type(condition),type(fixed_hyperparams))
     final_call = fixed_hyperparams[-1]
     ########## Assign hyperparameters ##########
     if condition=='structure':
         gamma_el = fixed_hyperparams[0]
         gamma_d = hyperparams[0]
         gamma_a = hyperparams[1]
-
         if ML=='KRR': 
             alpha = hyperparams[2]
         if ML=='SVR':
@@ -650,10 +643,8 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             epsilon = hyperparams[3]
     elif condition=='electronic':
         gamma_el = []
-        counter=0
         for i in range(len(elec_descrip)):
             gamma_el.append(hyperparams[i])
-            counter=counter+1
         gamma_d = fixed_hyperparams[0]
         gamma_a = fixed_hyperparams[1]
         if ML=='KRR':
@@ -706,7 +697,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         error_logo = None
         total_N    = None
         #################################################################
-        # Do novel-group validation
+        # DO NOVEL-GROUP VALIDATION
         if CV == 'groups':
             ########## Preprocess novel-group validation ##########
             X_train, y_train, X_test, y_test, test_indeces = groups_val_preprocess(X,y)
@@ -725,7 +716,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
             y_real, y_predicted, test_indeces, kNN_distances, kNN_error = last_val(X,y,ML_algorithm)
     #################################################################
     ########## Get prediction errors ##########
-    rms = get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a)
+    rms = get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a)
     return rms 
 #############################
 #############################
@@ -774,12 +765,10 @@ def kf_loo_cv(X,y,ML_algorithm):
     test_indeces   = []
     # Cross-Validation
     if CV=='kf':
-        kf = KFold(n_splits=kfold,shuffle=True)
-        validation=kf.split(X)
+        cv = KFold(n_splits=kfold,shuffle=True)
     elif CV=='loo':
-        loo = LeaveOneOut()
-        validation=loo.split(X)
-    for train_index, test_index in validation:
+        cv = LeaveOneOut()
+    for train_index, test_index in cv.split(X):
         # Print progress
         if CV=='loo':
             if counter == 0: print('Progress %.0f%s' %(0.0, '%'))
@@ -787,33 +776,30 @@ def kf_loo_cv(X,y,ML_algorithm):
             if prog >= print_progress_every_x_percent*progress_count:
                 print('Progress %.0f%s' %(prog, '%'), flush=True)
                 progress_count = progress_count + 1
-        if CV=='kf':
+        elif CV=='kf':
             print('Step',counter," / ", kfold,flush=True)
         counter=counter+1
         # assign train and test indeces
         X_train,X_test=X[train_index],X[test_index]
         y_train,y_test=y[train_index],y[test_index]
         # predict y values
-        #print('TEST X_train:', X_train)
-        #print('TEST X_test:', X_test)
-        #print('TEST before ravel:', y_train)
-        #print('TEST after ravel : ravel:', y_train.ravel())
         y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-        # if kNN: calculate lists with kNN_distances and kNN_error
-        if ML=='kNN':
+        # add predicted values in this CV iteration to list with total
+        y_predicted.append(y_pred.tolist())
+        y_real.append(y_test.tolist())
+        # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN' and plot_kNN_distances != None:
             provi_kNN_dist=ML_algorithm.kneighbors(X_test)
             for i in range(len(provi_kNN_dist[0])):
                 kNN_dist=np.mean(provi_kNN_dist[0][i])
                 kNN_distances.append(kNN_dist)
-            error = np.sum((y_pred - y_test)**2)
+            y_test = [item for dummy in y_test for item in dummy ]
+            error = np.sqrt((y_pred - y_test)**2)
             kNN_error.append(error)
-        # add predicted values in this LOO to list with total
-        y_predicted.append(y_pred.tolist())
-        y_real.append(y_test.tolist())
+        # if prediction_csv_file_name != None
         if prediction_csv_file_name != None:
             for i in test_index:
                 test_indeces.append(i)
-    #print('TEST types output:', type(y_real),type(y_predicted),type(kNN_distances),type(kNN_error))
     return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
 #############################
 #############################
@@ -852,7 +838,6 @@ def last_val(X,y,ML_algorithm):
     kNN_error: list
         kNN predictions errors (used to plot into 'plot_kNN_distances')
     '''
-    #print('TEST types:', type(X),type(y),type(ML_algorithm))
     y_real        = []
     y_predicted   = []
     kNN_error     = []
@@ -860,22 +845,20 @@ def last_val(X,y,ML_algorithm):
     test_indeces  = []
     X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
     # predict y values
-    #print('TEST X_train:', X_train)
-    #print('TEST X_test:', X_test)
-    #print('TEST before ravel:', y_train)
-    #print('TEST after ravel : ravel:', y_train.ravel())
     y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-    # if kNN: calculate lists with kNN_distances and kNN_error
-    if ML=='kNN':
+    # add predicted values to list with total
+    y_predicted.append(y_pred.tolist())
+    y_real.append(y_test.tolist())
+    # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
+    if ML=='kNN' and plot_kNN_distances != None:
         provi_kNN_dist=ML_algorithm.kneighbors(X_test)
         for i in range(len(provi_kNN_dist[0])):
             kNN_dist=np.mean(provi_kNN_dist[0][i])
             kNN_distances.append(kNN_dist)
-        error = np.sum((y_pred - y_test)**2)
+        y_test = [item for dummy in y_test for item in dummy ]
+        error = np.sqrt((y_pred - y_test)**2)
         kNN_error.append(error)
-    # add predicted values to list with total
-    y_predicted.append(y_pred.tolist())
-    y_real.append(y_test.tolist())
+    # if prediction_csv_file_name != None
     if prediction_csv_file_name != None:
         for i in range(Ndata-Nlast,Ndata):
             test_indeces.append(i)
@@ -915,21 +898,19 @@ def groups_val_preprocess(X,y):
     test_indeces: list
         indeces of points predicted (used to print into 'prediction_csv_file_name')
     '''
-    #print('TEST types input:', type(X),type(y))
     X_test       = []
     y_test       = []
     X_train      = []
     y_train      = []
     test_indeces = []
     for i in range(len(X)):
-        #print('TEST:',i)
         if X[i][0] in groups_acceptor_labels[group_test]:
             new_X = np.delete(X[i],0)
             X_test.append(new_X)
             y_test.append(y[i].tolist())
+            # if prediction_csv_file_name != None
             if prediction_csv_file_name != None:
                 test_indeces.append(i)
-            #print ('TEST:', X[i][0])
         else:
             new_X = np.delete(X[i],0)
             X_train.append(new_X)
@@ -940,7 +921,6 @@ def groups_val_preprocess(X,y):
     for i in range(len(X_test)):
         X_test[i] = X_test[i].tolist()
     y_train = [item for dummy in y_train for item in dummy ]
-    #print('TEST types output:', type(X_train),type(y_train),type(X_test),type(y_test),type(test_indeces))
     return X_train, y_train, X_test, y_test, test_indeces
 ###############################
 ###############################
@@ -973,8 +953,6 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     y_predicted: list
         predicted values of the target property
     '''
-    #print('TEST STARTING groups_val_opt')
-    counter      = 0
     y_real       = []
     y_predicted  = []
     # For novel-group validation, we need to minimize RMSE of validation group within Train
@@ -985,29 +963,14 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     y_total_pred = []
     y_total_valid = []
     for train_index, valid_index in validation:
-        #print('TEST', counter)
-        counter = counter+1
         X_new_train,X_new_valid=X_train[train_index],X_train[valid_index]
         y_new_train,y_new_valid=y_train[train_index],y_train[valid_index]
-        #print('TEST X_new_train:', len(X_new_train))
-        #print(X_new_train)
-        #print('TEST X_new_valid:', len(X_new_valid))
-        #print(X_new_valid)
-        #print('TEST y_new_train:', len(y_new_train))
-        #print(y_new_train)
-        #print('TEST y_new_valid:', len(y_new_valid))
-        #print(y_new_valid)
-        #print('TEST X_train:', X_new_train)
-        #print('TEST X_test:', X_new_valid)
-        #print('TEST before ravel:', y_new_train)
-        #print('TEST after ravel : ravel:', y_new_train.ravel())
         y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
         y_total_valid.append(y_new_valid)
         y_total_pred.append(y_pred)
     # add predicted values in this LOO to list with total
     y_predicted.append(y_total_pred)
     y_real.append(y_total_valid)
-    #print('TEST FINISHING groups_val_opt')
     return y_real, y_predicted
 #############################
 #############################
@@ -1048,7 +1011,6 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     kNN_error: list
         kNN predictions errors (used to plot into 'plot_kNN_distances')
     '''
-    #print('TEST types input:', type(X_train),type(y_train),type(X_test),type(y_test),type(ML_algorithm))
     y_real        = []
     y_predicted   = []
     kNN_error     = []
@@ -1056,25 +1018,21 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     X_train=np.array(X_train)
     y_train=np.array(y_train)
     X_test=np.array(X_test)
-    #print('TEST X_train:', X_train)
-    #print('TEST X_test:', X_test)
-    #print('TEST before ravel:', y_train)
-    #print('TEST after ravel : ravel:', y_train.ravel())
     y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
+    # add predicted values in this LOO to list with total
+    y_predicted.append(y_pred.tolist())
+    y_real.append(y_test)
+    y_real_array=np.array(y_real)
+    y_predicted_array=np.array(y_predicted)
     # if kNN: calculate lists with kNN_distances and kNN_error
     if ML=='kNN':
         provi_kNN_dist=ML_algorithm.kneighbors(X_test)
         for i in range(len(provi_kNN_dist[0])):
             kNN_dist=np.mean(provi_kNN_dist[0][i])
             kNN_distances.append(kNN_dist)
-        error = np.sum((y_pred - y_test)**2)
+        y_test = [item for dummy in y_test for item in dummy ]
+        error = np.sqrt((y_pred - y_test)**2)
         kNN_error.append(error)
-    # add predicted values in this LOO to list with total
-    y_predicted.append(y_pred.tolist())
-    y_real.append(y_test)
-    y_real_array=np.array(y_real)
-    y_predicted_array=np.array(y_predicted)
-    #print('TEST types output:',type(y_real),type(y_predicted),type(kNN_distances),type(kNN_error))
     return y_real, y_predicted, kNN_distances, kNN_error
 #############################
 #############################
@@ -1142,10 +1100,6 @@ def logo_cv_opt(X,y,ML_algorithm):
                 X_train = np.array(X_train)
                 y_train = np.array(y_train)
                 X_test  = np.array(X_test)
-                #print('TEST X_train:', X_train)
-                #print('TEST X_test:', X_test)
-                #print('TEST before ravel:', y_train)
-                #print('TEST after ravel :', y_train.ravel())
                 y_pred = ML_algorithm.fit(X_train, y_train).predict(X_test)
                 # Add predicted values in this LOO to list with total
                 y_predicted.append(y_pred.tolist())
@@ -1165,10 +1119,7 @@ def logo_cv_opt(X,y,ML_algorithm):
                     for i in range(len(sizes)):
                         if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
                     logo_weight = 1/(sum_sizes_n)
-                #print('logo_weight:', logo_weight)
                 error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                #print('y_pred:', y_pred)
-                #print('y_test',y_test)
                 print('Error logo',error_logo)
                 #########################################
         print('####################################')
@@ -1176,7 +1127,6 @@ def logo_cv_opt(X,y,ML_algorithm):
         print('y_predicted:', y_predicted)
     print('FINAL LOGO ERROR:', error_logo)
     print('####################################')
-    #print('TEST types output:',type(y_real),type(y_predicted),type(test_indeces),type(error_logo))
     return y_real, y_predicted, test_indeces, error_logo
 #############################
 #############################
@@ -1217,7 +1167,6 @@ def logo_cv_final(X,y,ML_algorithm):
     kNN_error: list
         kNN predictions errors (used to plot into 'plot_kNN_distances')
     '''
-    #print('TEST types input:', type(X),type(y),type(ML_algorithm))
     error_logo    = 0.0
     y_real        = []
     y_predicted   = []
@@ -1240,32 +1189,15 @@ def logo_cv_final(X,y,ML_algorithm):
                 if prediction_csv_file_name != None:
                     test_indeces.append(i)
             else:
-                #print('train: X[i]', X[i])
                 new_X = np.delete(X[i],0)
                 X_train.append(new_X)
                 y_train.append(y[i])
-        #print('Train/Test sizes:', len(X_train), len(X_test))
-        #print('TEST before X_train:', X_train)
-        #print('TEST before X_test:', X_test)
-        #print('TEST before before ravel:', y_train)
         X_train = np.array(X_train)
         y_train = np.array(y_train)
         X_test  = np.array(X_test)
-        #print('TEST after X_train:', X_train)
-        #print('TEST after X_test:', X_test)
-        #print('TEST after before ravel:', y_train)
-        #print('TEST after after ravel : ravel:', y_train.ravel())
         y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         y_predicted.append(y_pred.tolist())
         y_real.append(y_test)
-        # if kNN: calculate lists with kNN_distances and kNN_error
-        if ML=='kNN':
-            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-            for i in range(len(provi_kNN_dist[0])):
-                kNN_dist=np.mean(provi_kNN_dist[0][i])
-                kNN_distances.append(kNN_dist)
-            error = np.sum((y_pred - y_test)**2)
-            kNN_error.append(error)
         #########################################
         y_test = [item for sublist in y_test for item in sublist]
         if logo_error_type == 'A':  ### Weight A
@@ -1273,12 +1205,17 @@ def logo_cv_final(X,y,ML_algorithm):
         elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
             logo_weight = 1/((len(sizes)-1)*sizes[m])
         error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-        #print('y_pred:', y_pred)
-        #print('y_test',y_test)
         print('error_logo',error_logo)
         #########################################
+        # if kNN: calculate lists with kNN_distances and kNN_error
+        if ML=='kNN':
+            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+            for i in range(len(provi_kNN_dist[0])):
+                kNN_dist=np.mean(provi_kNN_dist[0][i])
+                kNN_distances.append(kNN_dist)
+            error = np.sqrt((y_pred - y_test)**2)
+            kNN_error.append(error)
     print('FINAL LOGO ERROR:', error_logo)
-    #print('TEST types output:',type(y_real),type(y_predicted),type(test_indeces),type(error_logo),type(kNN_distances), type(kNN_error))
     return y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error
 #############################
 #############################
@@ -1291,7 +1228,7 @@ def logo_cv_final(X,y,ML_algorithm):
 ### START get_pred_errors ###
 #############################
 #############################
-def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a):
+def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a):
     '''
     Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
 
@@ -1303,6 +1240,10 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
         predicted values of the target property
     test_indeces: list
         indeces of points predicted (used to print into 'prediction_csv_file_name')
+    kNN_distances: list
+        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
+    kNN_error: list
+        kNN predictions errors (used to plot into 'plot_kNN_distances')
     error_logo: np.float
         weighted squared error used during LOGO
     total_N: int
@@ -1323,7 +1264,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
     rms: float
         value of the error metric
     '''
-    #print('TEST types input:', type(y_real),type(y_predicted),type(test_indeces),type(error_logo),type(total_N),type(final_call),type(ML_algorithm),type(gamma_el),type(gamma_d),type(gamma_a))
     #################################################################
     # Put real and predicted values in 1D lists
     y_real = [item for dummy in y_real for item in dummy ]
@@ -1343,7 +1283,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
     r,_   = pearsonr(y_real, y_predicted)
     rho,_ = spearmanr(y_real, y_predicted)
     if CV != 'logo':
-        rms  = sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
+        rms  = math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
     # for LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
     else:
         if final_call==False:
@@ -1375,18 +1315,15 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
     if plot_target_predictions != None:
         plot_scatter(y_real_array, y_predicted_array,'plot_target_predictions',plot_target_predictions)
     if ML=='kNN' and plot_kNN_distances != None:
-        kNN_distancesi = np.array(kNN_distances)
+        kNN_distances = np.array(kNN_distances)
         kNN_error = [item for dummy in kNN_error for item in dummy]
         kNN_error = np.array(kNN_error)
         plot_scatter(kNN_distances, kNN_error, 'plot_kNN_distances', plot_kNN_distances)
     # Print results
-    #print('TEST get params:')
-    #print(ML_algorithm.get_params())
     if predict_unknown == True:
         r=0.0
         rms=0.0
     print('New', ML, 'call:')
-    #if ML=='kNN': print('kNN, for k = %i' %(ML_algorithm.get_params()['n_neighbors'])
     if ML=='kNN': print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
     if ML=='KRR': print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
     if ML=='SVR': print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
@@ -1396,7 +1333,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,error_logo,total_N,final_cal
         if ML=='KRR': f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         if ML=='SVR': f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         f_out.flush()
-    #print('TEST types output:',type(rms))
     return rms
 #############################
 #############################
@@ -1429,8 +1365,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     K: np.array.
         Kernel matrix element.
     '''
-    #print('TEST types input:',type(_x1), type(_x2), type(gamma_el), type(gamma_d), type(gamma_a))
-    #print('TEST call to SVR kernel')
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
@@ -1442,16 +1376,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
     if CV=='groups' or CV=='logo': elec_descrip_total=elec_descrip_total-1
-    #print('START TEST kernel_SVR:')
-    #print('_x1:')
-    #print(_x1)
-    #print('size_matrix1',size_matrix1)
-    #print('_x1.shape[1]',_x1.shape[1])
-    #print('_x2:')
-    #print(_x2)
-    #print('size_matrix2',size_matrix2)
-    #print('_x2.shape[1]',_x2.shape[1])
-    #print('elec_descrip_total',elec_descrip_total)
 
     ### K_el ###
     K = 1.0
@@ -1470,8 +1394,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
                 for j in range(elec_descrip[k]):
                     Xj_el[i].append(_x2[i][j])
             Xj_el = np.array(Xj_el)
-            #print('Xi_el', Xi_el)
-            #print('Xj_el', Xj_el)
             # calculate K_el
             D_el  = euclidean_distances(Xi_el, Xj_el)
             D2_el = np.square(D_el)
@@ -1523,8 +1445,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     # Calculate final kernel
     K = K * K_fp_d * K_fp_a
     #K = np.exp(-gamma_el*np.square(euclidean_distances(Xi_el, Xj_el)) - gamma_d*np.square(1-(np.dot(Xi_fp_d, Xj_fp_d.T) / (Xii_d + Xjj_d - np.dot(Xi_fp_d, Xj_fp_d.T)))) - gamma_a*np.square(1-(np.dot(Xi_fp_a, Xj_fp_a.T) / (Xii_a + Xjj_a - np.dot(Xi_fp_a, Xj_fp_a.T)))))
-    #print('K just before return:', K)
-    #print('TEST types output:',type(K))
     return K
 #############################
 #############################
@@ -1557,10 +1477,6 @@ def gaussian_kernel(Xi, Xj, gamma):
     K: np.array.
         Kernel matrix.
     '''
-    #print('##################################################')
-    #print('TEST Xi', Xi)
-    #print('TEST Xj', Xj)
-    #print('##################################################')
 
     m1 = Xi.shape[0]
     m2 = Xi.shape[0]
@@ -1568,22 +1484,13 @@ def gaussian_kernel(Xi, Xj, gamma):
     X1 = np.repeat(X1, m2, axis=1)
     X2 = Xj[np.newaxis,:,:]
     X2 = np.repeat(X2, m1, axis=0)
-    #print('##################################################')
-    #print('TEST Xi', X1)
-    #print('TEST Xj', X2)
-    #print('##################################################')
     D2 = np.sum((X1 - X2)**2, axis=2)
     K = np.exp(-gamma * D2)
 
     #Xi = Xi[0]
     #Xj = Xj[0]
-    #print('##################################################')
-    #print('TEST Xi', Xi)
-    #print('TEST Xj', Xj)
-    #print('##################################################')
     #D2 = np.sum((Xi - Xj)**2)
     #K = np.exp(-gamma * D2)
-
 
     return K
 #############################
@@ -1621,12 +1528,6 @@ def tanimoto_kernel(Xi, Xj, gamma):
 
     m1 = Xi.shape[0]
     m2 = Xj.shape[0]
-    #print('Inside Tanimoto kernel:')
-    #print('Xi:', Xi, 'length:', len(Xi[0]))
-    #print('Xj:', Xj, 'length:', len(Xj[0]))
-    #print('gamma:', gamma)
-    #print('m1',m1)
-    #print('m2',m2)
     Xii = np.repeat(np.linalg.norm(Xi, axis=1, keepdims=True)**2, m2, axis=1)
     Xjj = np.repeat(np.linalg.norm(Xj, axis=1, keepdims=True).T**2, m1, axis=0)
     T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
@@ -1694,19 +1595,11 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
             fin = elec_descrip[0]-1
         else:
             fin = elec_descrip[0]
-        #print('################')
-        #print('TEST kernel KRR:')
-        #print('elec_descrip_total',elec_descrip_total)
-        #print('fin',fin)
-        #print('################')
         K = 1.0
         for i in range(len(elec_descrip)):
             Xi_el.append(_x1[ini:fin].reshape(1,-1))
             Xj_el.append(_x2[ini:fin].reshape(1,-1))
             K_el.append(1.0)
-            #print('new i:')
-            #print('Xi_el',Xi_el, 'length:', len(Xi_el[0][0]))
-            #print('Xj_el',Xj_el, 'length:', len(Xj_el[0][0]))
             if gamma_el[i] != 0.0: K_el[i] = gaussian_kernel(Xi_el[i], Xj_el[i], gamma_el[i])
             K = K * K_el[i]
             if i < len(elec_descrip)-1:
@@ -1717,10 +1610,6 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         Xi_fp_a = _x1[ndesp1:].reshape(1,-1)
         Xj_fp_d = _x2[elec_descrip_total:ndesp1].reshape(1,-1)
         Xj_fp_a = _x2[ndesp1:].reshape(1,-1)
-        #print('len(Xi_fp_d):', len(Xi_fp_d[0]))
-        #print('len(Xi_fp_a):', len(Xi_fp_a[0]))
-        #print('len(Xj_fp_d):', len(Xj_fp_d[0]))
-        #print('len(Xj_fp_a):', len(Xj_fp_a[0]))
         K_fp_d = 1.0
         K_fp_a = 1.0
         if gamma_d != 0.0: K_fp_d = tanimoto_kernel(Xi_fp_d, Xj_fp_d, gamma_d)
@@ -1757,13 +1646,12 @@ def plot_scatter(x, y, plot_type, plot_name):
     plot_name: str
         name of png file to plot figure
     '''
-    #print('TEST types input:',type(x),type(y),type(plot_type),type(plot_name))
     # general plot options
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
     r,_ = pearsonr(x, y)
     rho,_ = spearmanr(x, y)
-    rmse  = sqrt(mean_squared_error(x,y))
+    rmse  = math.sqrt(mean_squared_error(x,y))
     ma = np.max([x.max(), y.max()]) + 1
     mi = y.min() - 1
     ax = plt.subplot(gs[0])
@@ -1785,8 +1673,6 @@ def plot_scatter(x, y, plot_type, plot_name):
     if plot_type == 'plot_target_predictions':
         ax.set_xlabel(r"PCE / %", size=24, labelpad=10)
         ax.set_ylabel(r'PCE$^{%s}$ / %s' %(ML,"%"), size=24, labelpad=10)
-        #ax.set_xlim(0, ma)
-        #ax.set_ylim(0, ma)
         ax.set_xlim(mi, ma)
         ax.set_ylim(mi, ma)
         ax.set_aspect('equal')

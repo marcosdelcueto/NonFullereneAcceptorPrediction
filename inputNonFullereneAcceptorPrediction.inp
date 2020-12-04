@@ -34,7 +34,7 @@ predict_unknown = False               # select if test configurations have unkno
 #######################################
 ####### Output prediction csv #########
 #######################################
-prediction_csv_file_name = None # Select None if no output prediction csv is wanted
+prediction_csv_file_name = 'pred.csv' # Select None if no output prediction csv is wanted
 columns_labels_prediction_csv = []    # Select extra labels to print in output prediction csv
 #######################################
 # Machine Learning Algorithm options ##
@@ -42,8 +42,8 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 plot_target_predictions = 'pred.png'  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
 ML = 'kNN'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'logo'                             # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
-kfold = 2                             # only used if CV=kf
+CV = 'kf'                           # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
+kfold = 3                             # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[13,15,20,21,28,33],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[17,26]]
@@ -51,16 +51,16 @@ group_test = 6                        # only used if CV='groups'. Note that grou
 logo_error_type = 'A'                 # only used if CV='logo'. Possible types: 'A', 'B' or 'C'
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.3369]	  						  # hyperparameters with weights of d_el
-gamma_d  =  1.7228  					  		  # hyperparameter with weight of d_fp_d
-gamma_a  =  0.1023  	  				  		  # hyperparameter with weight of d_fp_a
+gamma_el = [0.5385]	  						  # hyperparameters with weights of d_el
+gamma_d  =  3.3851  					  		  # hyperparameter with weight of d_fp_d
+gamma_a  =  0.8504  	  				  		  # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(1.00,2.00)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.111, 0.112)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.111, 0.112)         	  # range in which gamma_a is optimized
 weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Default: 'linear'
 ### k-Nearest Neighbors ('kNN') #######
-Neighbors = [5] 	# number of nearest-neighbors
-plot_kNN_distances = None 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
+Neighbors = [3] 	# number of nearest-neighbors
+plot_kNN_distances = 'knn_distances.png' 				  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
 alpha = 0.3373          					  # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
