@@ -704,9 +704,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
         if final_call == False:
             kNN_distances = []
             kNN_error     = []
-            y_real, y_predicted, test_indeces, error_logo = logo_cv_opt(X,y,ML_algorithm)
+            y_real, y_predicted, test_indeces, error_logo = logo_cv_opt(X,y,ML_algorithm,sizes)
         if final_call == True:
-            y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error = logo_cv_final(X,y,ML_algorithm)
+            y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error = logo_cv_final(X,y,ML_algorithm,sizes)
     #################################################################
     elif CV !='logo':
         error_logo = None
@@ -1058,7 +1058,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
 ##### START logo_cv_opt #####
 #############################
 #############################
-def logo_cv_opt(X,y,ML_algorithm):
+def logo_cv_opt(X,y,ML_algorithm,sizes):
     '''
     Function to calculate error metric during hyperparameter optimization using a LOGO cross-validation
 
@@ -1070,6 +1070,8 @@ def logo_cv_opt(X,y,ML_algorithm):
         array containing target property
     ML_algorithm: sklearn object
         object containing the ML model structure
+    sizes: list
+        list with the number of points in each group
 
     Returns
     -------
@@ -1147,7 +1149,7 @@ def logo_cv_opt(X,y,ML_algorithm):
 #### START logo_cv_final ####
 #############################
 #############################
-def logo_cv_final(X,y,ML_algorithm):
+def logo_cv_final(X,y,ML_algorithm,sizes):
     '''
     Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
 
@@ -1159,6 +1161,8 @@ def logo_cv_final(X,y,ML_algorithm):
         array containing target property
     ML_algorithm: sklearn object
         object containing the ML model structure
+    sizes: list
+        list with the number of points in each group
 
     Returns
     -------
