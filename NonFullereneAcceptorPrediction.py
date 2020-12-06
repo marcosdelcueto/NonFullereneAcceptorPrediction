@@ -1084,7 +1084,6 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
     error_logo: float
         weighted squared error used during LOGO
     '''
-    rms_total    = 0.0
     error_logo   = 0.0
     y_real       = []
     y_predicted  = []
