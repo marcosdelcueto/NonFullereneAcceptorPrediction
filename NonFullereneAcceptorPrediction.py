@@ -118,7 +118,7 @@ def main():
             # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
             fixed_hyperparams.append(False)
             mini_args = (X, y, condition,fixed_hyperparams)
-            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
+            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=True,workers=NCPU,updating='deferred')
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
@@ -171,7 +171,7 @@ def main():
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
                     mini_args = (X, y, condition,fixed_hyperparams)
-                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=15,tol=0.01,polish=False,workers=NCPU,updating='deferred')
+                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=True,workers=NCPU,updating='deferred')
                     # print best hyperparams
                     best_hyperparams = solver.x
                     best_rmse = solver.fun
@@ -336,6 +336,8 @@ def read_initial_values(inp):
     columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
     predict_unknown = ast.literal_eval(var_value[var_name.index('predict_unknown')])
     logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
+    diff_evol_tol = ast.literal_eval(var_value[var_name.index('diff_evol_tol')])
+    diff_evol_pop = ast.literal_eval(var_value[var_name.index('diff_evol_pop')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -391,6 +393,10 @@ def read_initial_values(inp):
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
         print('logo_error_type =', logo_error_type)
+    if optimize_hyperparams == True:
+        print('### Differential Evolution ##########')
+        print('diff_evol_tol = ', diff_evol_tol)
+        print('diff_evol_pop = ', diff_evol_pop)
     print('### General hyperparameters ##########')
     print('optimize_hyperparams = ', optimize_hyperparams)
     print('gamma_el = ', gamma_el)
@@ -460,6 +466,10 @@ def read_initial_values(inp):
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
             f_out.write('logo_error_type %s\n' % str(logo_error_type))
+        if optimize_hyperparams == True:
+            f_out.write('### Differential Evolution ##########')
+            f_out.write('diff_evol_tol %s\n' % str(diff_evol_tol))
+            f_out.write('diff_evol_pop %s\n' % str(diff_evol_pop))
         f_out.write('### General hyperparameters ##########\n')
         f_out.write('optimize_hyperparams %s\n' % str(optimize_hyperparams))
         f_out.write('gamma_el %s\n' % str(gamma_el))
@@ -485,7 +495,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type,diff_evol_tol,diff_evol_pop)
 #############################
 #############################
 ## END read_initial_values ##
@@ -1774,7 +1784,7 @@ elec_descrip, xcols, ycols, Ndata, print_log, log_name, NCPU, f_out, FP_length,
 weight_RMSE, CV, kfold, plot_target_predictions, plot_kNN_distances, 
 print_progress_every_x_percent, number_elec_descrip, groups_acceptor_labels, group_test, 
 acceptor_label_column, Nlast, prediction_csv_file_name, columns_labels_prediction_csv, 
-predict_unknown, logo_error_type) = read_initial_values(input_file_name)
+predict_unknown, logo_error_type,diff_evol_tol,diff_evol_pop) = read_initial_values(input_file_name)
 ##########################################################
 ################# Execute main function ##################
 ##########################################################
