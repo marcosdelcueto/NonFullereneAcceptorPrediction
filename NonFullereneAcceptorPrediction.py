@@ -42,6 +42,8 @@ def main():
     # Preprocess data
     xcols_flat = [item for sublist in xcols for item in sublist]
     X=df[xcols_flat].values
+    #print('NEW TEST 1 X')
+    #print(X)
     y=df[ycols].values
     for i in range(Ndata):
         X_d=[]
@@ -53,7 +55,11 @@ def main():
             X_a.append(int(float(X2[j])))
         X[i][0]=X_d
         X[i][1]=X_a
+    #print('NEW TEST 2 X')
+    #print(X)
     X=preprocess_fn(X)
+    #print('NEW TEST 3 X')
+    #print(X)
     ########## Optimize hyperparameters ##########
     if optimize_hyperparams==True:
         fixed_hyperparams = []
@@ -557,6 +563,12 @@ def preprocess_fn(X):
     ########## For kf, loo and last ##########
     else:
         X_el = xscaler.fit_transform(X_el)
+    print('NEW test X_el')
+    print(X_el)
+    print('NEW test X_fp_d')
+    print(X_fp_d)
+    print('NEW test X_fp_a')
+    print(X_fp_a)
     ########## Put together final X combining X_el, X_fp_d and X_fp_a
     X = np.c_[ X_el,X_fp_d,X_fp_a]
     return X
