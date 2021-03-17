@@ -119,7 +119,7 @@ def main():
             # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
             fixed_hyperparams.append(False)
             mini_args = (X, y, condition,fixed_hyperparams)
-            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=True,workers=NCPU,updating='deferred')
+            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=False,workers=NCPU,updating='deferred')
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
@@ -172,7 +172,7 @@ def main():
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
                     mini_args = (X, y, condition,fixed_hyperparams)
-                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=True,workers=NCPU,updating='deferred')
+                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=False,workers=NCPU,updating='deferred')
                     # print best hyperparams
                     best_hyperparams = solver.x
                     best_rmse = solver.fun
