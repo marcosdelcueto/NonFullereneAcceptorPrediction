@@ -24,6 +24,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 from sklearn.model_selection import StratifiedKFold, train_test_split
+#np.set_printoptions(threshold=sys.maxsize)
 #################################################################################
 ######################### START CUSTOMIZABLE PARAMETERS #########################
 input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
@@ -563,12 +564,6 @@ def preprocess_fn(X):
     ########## For kf, loo and last ##########
     else:
         X_el = xscaler.fit_transform(X_el)
-    print('NEW test X_el')
-    print(X_el)
-    print('NEW test X_fp_d')
-    print(X_fp_d)
-    print('NEW test X_fp_a')
-    print(X_fp_a)
     ########## Put together final X combining X_el, X_fp_d and X_fp_a
     X = np.c_[ X_el,X_fp_d,X_fp_a]
     return X
@@ -1125,9 +1120,15 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
                 for i in range(len(X)):
                     if X[i][0] in groups_acceptor_labels[n]:
                         new_X = np.delete(X[i],0)
+                        #print('NEW in TEST:')
+                        #print(new_X[:12])
+                        #print(y[i].tolist())
                         X_test.append(new_X)
                         y_test.append(y[i].tolist())
                     elif X[i][0] in groups_acceptor_labels[m]:
+                        #print('NEW Ignore:')
+                        #print(np.delete(X[i],0)[:12])
+                        #print(y[i].tolist())
                         pass
                     else:
                         new_X = np.delete(X[i],0)
@@ -1155,7 +1156,7 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
                         if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
                     logo_weight = 1/(sum_sizes_n)
                 error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                print('Error logo',error_logo)
+                #print('Error logo',error_logo)
                 #########################################
     print('FINAL LOGO ERROR:', error_logo)
     return y_real, y_predicted, test_indeces, error_logo
@@ -1218,6 +1219,9 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
         for i in range(len(X)):
             if X[i][0] in groups_acceptor_labels[m]:
                 new_X = np.delete(X[i],0)
+                #print('NEW in TEST:')
+                #print(new_X)
+                #print(y[i].tolist())
                 X_test.append(new_X)
                 y_test.append(y[i].tolist())
                 if prediction_csv_file_name != None:
@@ -1401,39 +1405,52 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     K: np.array.
         Kernel matrix.
     '''
+    #print('###########################')
+    #print('TEST entering kernel_SVR')
     # Initialize kernel values
     K_el   = []
     K_fp_d = 1.0
     K_fp_a = 1.0
     size_matrix1=_x1.shape[0]
     size_matrix2=_x2.shape[0]
+    #print('size_matrix1',size_matrix1)
+    #print('size_matrix2',size_matrix2)
 
     elec_descrip_total=0
     for k in elec_descrip:
         elec_descrip_total=elec_descrip_total+k
     if CV=='groups' or CV=='logo': elec_descrip_total=elec_descrip_total-1
+    #print('elec_descrip', elec_descrip)
+    #print('elec_descrip_total', elec_descrip_total)
 
     ### K_el ###
     K = 1.0
     for k in range(len(elec_descrip)):
+        #print('TEST K_el, there should be only one of these')
         K_el.append(1.0)
         if gamma_el[k] != 0.0:
             # define Xi_el
             Xi_el = [[] for j in range(size_matrix1)]
             for i in range(size_matrix1):
-                for j in range(elec_descrip[k]):
+                for j in range(elec_descrip[k]-1):
                     Xi_el[i].append(_x1[i][j])
             Xi_el = np.array(Xi_el)
             # define Xj_el
             Xj_el = [[] for j in range(size_matrix2)]
             for i in range(size_matrix2):
-                for j in range(elec_descrip[k]):
+                for j in range(elec_descrip[k]-1):
                     Xj_el[i].append(_x2[i][j])
             Xj_el = np.array(Xj_el)
+            #print('Xi_el:', len(Xi_el), len(Xi_el[0]))
+            #print('Xj_el:', len(Xj_el), len(Xj_el[0]))
             # calculate K_el
             D_el  = euclidean_distances(Xi_el, Xj_el)
+            #print('D_el:', len(D_el),len(D_el[0]))
+            #print('D_el:', D_el)
             D2_el = np.square(D_el)
+            #print('D2_el:', D2_el)
             K_el[k] = np.exp(-gamma_el[k]*D2_el)
+            #print('K_el[k]:', K_el[k])
             K = K * K_el[k]
     ### K_fp_d ###
     if gamma_d != 0.0:
@@ -1443,12 +1460,14 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
             for j in range(FP_length):
                 Xi_fp_d[i].append(_x1[i][j+elec_descrip_total])
         Xi_fp_d = np.array(Xi_fp_d)
+        #print('Xi_fp_d', len(Xi_fp_d),len(Xi_fp_d[0]))
         # define Xj_fp_d
         Xj_fp_d = [[] for j in range(size_matrix2)]
         for i in range(size_matrix2):
             for j in range(FP_length):
                 Xj_fp_d[i].append(_x2[i][j+elec_descrip_total])
         Xj_fp_d = np.array(Xj_fp_d)
+        #print('Xj_fp_d', len(Xj_fp_d),len(Xj_fp_d[0]))
         # calculate K_fp_d
         Xii_d = np.repeat(np.linalg.norm(Xi_fp_d, axis=1, keepdims=True)**2, size_matrix2, axis=1)
         Xjj_d = np.repeat(np.linalg.norm(Xj_fp_d, axis=1, keepdims=True).T**2, size_matrix1, axis=0)
@@ -1479,6 +1498,7 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
         K_fp_a = np.exp(-gamma_a*D2_fp_a)
     # Calculate final kernel
     K = K * K_fp_d * K_fp_a
+    #print('TEST exiting kernel_SVR')
     return K
 #############################
 #############################
