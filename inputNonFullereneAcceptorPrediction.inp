@@ -42,7 +42,7 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 plot_target_predictions = None        # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
 ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'logo'                            # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
+CV = 'loo'                            # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
 kfold = 10                            # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
@@ -57,9 +57,9 @@ diff_evol_tol = 0.01                  # relative tolerance for convergence. Stop
 diff_evol_pop = 15                    # multiplier for total population size. Final size is parameters * diff_evol_pop
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [2.0]	     # hyperparameters with weights of d_el
-gamma_d  =  1.0	  			    		  # hyperparameter with weight of d_fp_d
-gamma_a  =  1.0 		  			        # hyperparameter with weight of d_fp_a
+gamma_el = [0.01772431555150833]	     # hyperparameters with weights of d_el
+gamma_d  =  0.0	  			    		  # hyperparameter with weight of d_fp_d
+gamma_a  =  0.0 		  			        # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -71,8 +71,8 @@ plot_kNN_distances = None 			 	  # decide filename for graph of kNN-distances vs
 alpha = 0.3373          			     # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
-C = 2.174719  	              # regularization hyperparameter
-epsilon = 0.798240		  # epsilon-SVR
+C = 4.45783752  	              # regularization hyperparameter
+epsilon = 0.01280763		  # epsilon-SVR
 C_lim = (0.0,10.0)                     # range in which C is optimized
 epsilon_lim = (0.0,10.0)        	     # range in which epsilon is optimized
 #######################################
