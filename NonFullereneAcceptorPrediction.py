@@ -1099,53 +1099,54 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
     y_real       = []
     y_predicted  = []
     test_indeces = []
-    for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
-        #print('############')
-        #print('MAIN M GROUP', m)
-        #print('############')
-        for n in range(1,len(groups_acceptor_labels)): #  Note: we're ignoring group 0
-            if m != n:
-                X_test  = []
-                y_test  = []
-                X_train = []
-                y_train = []
-                print('##### Sub n=%i group' %n)
-                # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
-                for i in range(len(X)):
-                    if X[i][0] in groups_acceptor_labels[n]:
-                        new_X = np.delete(X[i],0)
-                        X_test.append(new_X)
-                        y_test.append(y[i].tolist())
-                    elif X[i][0] in groups_acceptor_labels[m]:
-                        pass
-                    else:
-                        new_X = np.delete(X[i],0)
-                        X_train.append(new_X)
-                        y_train.append(y[i])
-                X_train = np.array(X_train)
-                y_train = np.array(y_train)
-                X_test  = np.array(X_test)
-                y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-                # Add predicted values in this LOO to list with total
-                y_predicted.append(y_pred)
-                y_real.append(y_test)
-                #########################################
-                y_test = [item for sublist in y_test for item in sublist]
-                # Weight A
-                if logo_error_type == 'A':
-                    logo_weight = 1.0
-                # Weight B
-                elif logo_error_type == 'B':
-                    logo_weight = 1/((len(sizes)-2)*sizes[n])
-                # Weight C
-                elif logo_error_type == 'C':
-                    sum_sizes_n = 0
-                    for i in range(len(sizes)):
-                        if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
-                    logo_weight = 1/(sum_sizes_n)
-                error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-                #print('Error logo',error_logo)
-                #########################################
+    # Predict only one group 'm'
+    m = group_test
+    print('############')
+    print('MAIN M GROUP', m)
+    print('############')
+    for n in range(1,len(groups_acceptor_labels)): #  Note: we're ignoring group 0
+        if m != n:
+            X_test  = []
+            y_test  = []
+            X_train = []
+            y_train = []
+            print('##### Sub n=%i group' %n)
+            # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
+            for i in range(len(X)):
+                if X[i][0] in groups_acceptor_labels[n]:
+                    new_X = np.delete(X[i],0)
+                    X_test.append(new_X)
+                    y_test.append(y[i].tolist())
+                elif X[i][0] in groups_acceptor_labels[m]:
+                    pass
+                else:
+                    new_X = np.delete(X[i],0)
+                    X_train.append(new_X)
+                    y_train.append(y[i])
+            X_train = np.array(X_train)
+            y_train = np.array(y_train)
+            X_test  = np.array(X_test)
+            y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+            # Add predicted values in this LOO to list with total
+            y_predicted.append(y_pred)
+            y_real.append(y_test)
+            #########################################
+            y_test = [item for sublist in y_test for item in sublist]
+            # Weight A
+            if logo_error_type == 'A':
+                logo_weight = 1.0
+            # Weight B
+            elif logo_error_type == 'B':
+                logo_weight = 1/((len(sizes)-2)*sizes[n])
+            # Weight C
+            elif logo_error_type == 'C':
+                sum_sizes_n = 0
+                for i in range(len(sizes)):
+                    if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
+                logo_weight = 1/(sum_sizes_n)
+            error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+            #print('Error logo',error_logo)
+            #########################################
     print('FINAL LOGO ERROR:', error_logo)
     return y_real, y_predicted, test_indeces, error_logo
 #############################
@@ -1195,49 +1196,50 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     test_indeces  = []
     kNN_error     = []
     kNN_distances = []
-    for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
-        X_test  = []
-        y_test  = []
-        X_train = []
-        y_train = []
-        #print('############')
-        #print('MAIN M GROUP', m)
-        #print('############')
-        # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
-        for i in range(len(X)):
-            if X[i][0] in groups_acceptor_labels[m]:
-                new_X = np.delete(X[i],0)
-                X_test.append(new_X)
-                y_test.append(y[i].tolist())
-                if prediction_csv_file_name != None:
-                    test_indeces.append(i)
-            else:
-                new_X = np.delete(X[i],0)
-                X_train.append(new_X)
-                y_train.append(y[i])
-        X_train = np.array(X_train)
-        y_train = np.array(y_train)
-        X_test  = np.array(X_test)
-        y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-        y_predicted.append(y_pred.tolist())
-        y_real.append(y_test)
-        #########################################
-        y_test = [item for sublist in y_test for item in sublist]
-        if logo_error_type == 'A':  ### Weight A
-            logo_weight = 1.0
-        elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
-            logo_weight = 1/((len(sizes)-1)*sizes[m])
-        error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
-        print('error_logo',error_logo)
-        #########################################
-        # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
-        if ML=='kNN' and plot_kNN_distances != None:
-            provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-            for i in range(len(provi_kNN_dist[0])):
-                kNN_dist=np.mean(provi_kNN_dist[0][i])
-                kNN_distances.append(kNN_dist)
-            error = np.sqrt((y_pred - y_test)**2)
-            kNN_error.append(error)
+    #for m in range(1,len(groups_acceptor_labels)): # Note: we're ignoring group 0
+    m = group_test
+    X_test  = []
+    y_test  = []
+    X_train = []
+    y_train = []
+    print('############')
+    print('MAIN M GROUP', m)
+    print('############')
+    # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
+    for i in range(len(X)):
+        if X[i][0] in groups_acceptor_labels[m]:
+            new_X = np.delete(X[i],0)
+            X_test.append(new_X)
+            y_test.append(y[i].tolist())
+            if prediction_csv_file_name != None:
+                test_indeces.append(i)
+        else:
+            new_X = np.delete(X[i],0)
+            X_train.append(new_X)
+            y_train.append(y[i])
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    X_test  = np.array(X_test)
+    y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
+    y_predicted.append(y_pred.tolist())
+    y_real.append(y_test)
+    #########################################
+    y_test = [item for sublist in y_test for item in sublist]
+    if logo_error_type == 'A':  ### Weight A
+        logo_weight = 1.0
+    elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
+        logo_weight = 1/((len(sizes)-1)*sizes[m])
+    error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+    print('error_logo',error_logo)
+    #########################################
+    # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
+    if ML=='kNN' and plot_kNN_distances != None:
+        provi_kNN_dist=ML_algorithm.kneighbors(X_test)
+        for i in range(len(provi_kNN_dist[0])):
+            kNN_dist=np.mean(provi_kNN_dist[0][i])
+            kNN_distances.append(kNN_dist)
+        error = np.sqrt((y_pred - y_test)**2)
+        kNN_error.append(error)
     print('FINAL LOGO ERROR:', error_logo)
     return y_real, y_predicted, test_indeces, error_logo, kNN_distances, kNN_error
 #############################
