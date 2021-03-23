@@ -1687,10 +1687,10 @@ def plot_scatter(x, y, plot_type, plot_name):
     rho,_ = spearmanr(x, y)
     rmse  = math.sqrt(mean_squared_error(x,y))
     ma = np.max([x.max(), y.max()]) + 1
-    mi = y.min() - 1
+    mi = max(np.min([x.min(), y.min()]) - 1,0.0)
     ax = plt.subplot(gs[0])
     ax.scatter(x, y, color="b")
-    ax.tick_params(axis='both', which='major', direction='in', labelsize=20, pad=10, length=5)
+    ax.tick_params(axis='both', which='major', direction='in', labelsize=10, pad=10, length=5)
     #######################################################################
     ##### SAVE #####
     # options for plot_target_predictions
@@ -1705,10 +1705,11 @@ def plot_scatter(x, y, plot_type, plot_name):
     #######################################################################
     # options for plot_target_predictions
     if plot_type == 'plot_target_predictions':
-        ax.set_xlabel(r"PCE / %", size=24, labelpad=10)
-        ax.set_ylabel(r'PCE$^{%s}$ / %s' %(ML,"%"), size=24, labelpad=10)
+        ax.set_xlabel(r"PCE / %", size=15, labelpad=10)
+        ax.set_ylabel(r'PCE$^{%s}$ / %s' %(ML,"%"), size=15, labelpad=10)
         ax.set_xlim(mi, ma)
         ax.set_ylim(mi, ma)
+        #ax.set_ylim(mi, 10)
         ax.set_aspect('equal')
         ax.plot(np.arange(0, ma + 0.1, 0.1), np.arange(0, ma + 0.1, 0.1), color="k", ls="--")
 
@@ -1716,8 +1717,8 @@ def plot_scatter(x, y, plot_type, plot_name):
         ax.plot(x, m*x + b,color="k",linewidth=3)
         #print('m:', m, 'b:', b)
 
-        ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=18)
-        ax.annotate(u'$rmse$ = %.2f' % rmse, xy=(0.15,0.75), xycoords='axes fraction', size=18)
+        ax.annotate(u'$r$ = %.2f' % r, xy=(0.05,0.90), xycoords='axes fraction', size=10)
+        ax.annotate(u'$rmse$ = %.2f' % rmse, xy=(0.05,0.80), xycoords='axes fraction', size=10)
     # options for plot_kNN_distances
     elif plot_type == 'plot_kNN_distances':
         ax.set_xlabel(r"Distance", size=24, labelpad=10)
@@ -1733,7 +1734,7 @@ def plot_scatter(x, y, plot_type, plot_name):
     ax.yaxis.set_minor_locator(ytickmin)
     ax.xaxis.set_ticks_position('both')
     ax.yaxis.set_ticks_position('both')
-    ax.tick_params(axis='both', which='minor', direction='in', labelsize=20, pad=10, length=2)
+    ax.tick_params(axis='both', which='minor', direction='in', labelsize=10, pad=10, length=2)
     # save plot into corresponding file
     plt.savefig(plot_name,dpi=600,bbox_inches='tight')
     return

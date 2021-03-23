@@ -25,31 +25,28 @@ print_progress_every_x_percent =  10  # print progress in standard output at dif
 db_file = 'database.csv'              # name of input file with database
 Ndata =  566                          # number of d/a pairs
 xcols_struc = ["SMILES-DFP","SMILES-AFP"]                    # name of descriptors that will be affected by gamma_d and gamma_a, respectively
-xcols_elec0 = ["HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
-#xcols_elec1 = ["sum of f-D", "sum of f-A"]                  # name of descriptors affected by gamma_el[1]
-#xcols_elec2 = ["XLOGP3-D","XLOGP3-A"]                       # name of descriptors affected by gamma_el[2]
+#xcols_elec0 = ["HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0]
+xcols_elec0 = ['Efund-D', 'XLOGP3-D', 'HH-1-A', 'XLOGP3-A'] # name of descriptors affected by gamma_el[0]
 ycols = [ "PCE" ]               	     # name of target property
 FP_length = 2048						     # number of entries of each fingerprint
 predict_unknown = False               # select if test configurations have unknown PCE (Default: False)
 #######################################
 ####### Output prediction csv #########
 #######################################
-prediction_csv_file_name = None		  # Select None if no output prediction csv is wanted
+prediction_csv_file_name = 'pred.csv'		  # Select None if no output prediction csv is wanted
 columns_labels_prediction_csv = []    # Select extra labels to print in output prediction csv
 #######################################
 # Machine Learning Algorithm options ##
 #######################################
-plot_target_predictions = None        # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
+plot_target_predictions = 'pred.png'  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
 ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'loo'                            # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
+CV = 'logo'                            # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
 kfold = 10                            # only used if CV=kf
 Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[0],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[17,26]]
-#groups_acceptor_labels = [[0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43]]
-#groups_acceptor_labels = [[0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43]]
-#groups_acceptor_labels = [[0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],[46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],[61],[62],[63],[64],[65],[66],[67],[68],[69],[70],[71],[72],[73],[74],[75],[76],[77],[78],[79],[80],[81],[82],[83],[84],[85],[86],[87],[88],[89],[90],[91],[92],[93],[94],[95],[96],[97],[98],[99],[100],[101],[102],[103],[104],[105],[106],[107],[108],[109],[110],[111],[112],[113],[114],[115],[116],[117],[118],[119],[120],[121],[122],[123],[124],[125],[126],[127],[128],[129],[130],[131],[132],[133],[134],[135],[136],[137],[138],[139],[140],[141],[142],[143],[144],[145],[146],[147],[148],[149],[150],[151],[152],[153],[154],[155],[156],[157],[158],[159],[160],[161],[162]]
+#groups_acceptor_labels = [[0],[1, 2, 3, 7, 10, 22, 27], [4, 8, 11, 17], [5, 12, 19, 23, 24, 29, 32], [6, 9, 14, 16, 18, 25, 26, 30, 31]]
 group_test = 5                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
 logo_error_type = 'A'                 # only used if CV='logo'. Possible types: 'A', 'B' or 'C'
 ### Differential Evolution ############
@@ -57,9 +54,9 @@ diff_evol_tol = 0.01                  # relative tolerance for convergence. Stop
 diff_evol_pop = 15                    # multiplier for total population size. Final size is parameters * diff_evol_pop
 ### General hyperparameters ###########
 optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.01772431555150833]	     # hyperparameters with weights of d_el
-gamma_d  =  0.0	  			    		  # hyperparameter with weight of d_fp_d
-gamma_a  =  0.0 		  			        # hyperparameter with weight of d_fp_a
+gamma_el = [0.1373 ]	  # hyperparameters with weights of d_el
+gamma_d  =  0.0 		  # hyperparameter with weight of d_fp_d
+gamma_a  =  0.0 	     # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -71,8 +68,8 @@ plot_kNN_distances = None 			 	  # decide filename for graph of kNN-distances vs
 alpha = 0.3373          			     # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
-C = 4.45783752  	              # regularization hyperparameter
-epsilon = 0.01280763		  # epsilon-SVR
-C_lim = (0.0,10.0)                     # range in which C is optimized
+C = 5.7273  	              # regularization hyperparameter
+epsilon = 0.3039	   	  # epsilon-SVR
+C_lim = (0.0,10.0)                    # range in which C is optimized
 epsilon_lim = (0.0,10.0)        	     # range in which epsilon is optimized
 #######################################
