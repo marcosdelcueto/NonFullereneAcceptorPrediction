@@ -707,10 +707,12 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 if X[i][0] in j:
                     group_size=group_size+1
             sizes.append(group_size)
-        total_N = 0
-        for i in sizes:
-            total_N = total_N + i
-        total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
+        #total_N = 0
+        #print('TEST GROUP SIZE', sizes[group_test])
+        total_N = sizes[group_test]
+        #for i in sizes:
+            #total_N = total_N + i
+        #total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
         ########## Do LOGO ##########
         if final_call == False:
             kNN_distances = []
@@ -1208,12 +1210,14 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
     for i in range(len(X)):
         if X[i][0] in groups_acceptor_labels[m]:
+            #print('In test:', i, X[i][0])
             new_X = np.delete(X[i],0)
             X_test.append(new_X)
             y_test.append(y[i].tolist())
             if prediction_csv_file_name != None:
                 test_indeces.append(i)
         else:
+            #print('In train:', i, X[i][0])
             new_X = np.delete(X[i],0)
             X_train.append(new_X)
             y_train.append(y[i])
@@ -1223,6 +1227,10 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
     y_predicted.append(y_pred.tolist())
     y_real.append(y_test)
+    print('y_pred:')
+    print(y_pred)
+    print('y_test:')
+    print(y_test)
     #########################################
     y_test = [item for sublist in y_test for item in sublist]
     if logo_error_type == 'A':  ### Weight A
@@ -1294,6 +1302,12 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
+    print('calc_errors - y_predicted:')
+    print(y_predicted)
+    print('calc_errors - y_real:')
+    print(y_real)
+    print('error_logo:', error_logo)
+    print('total_N:', total_N)
     # Calculate rmse, r and rho
     if weight_RMSE == 'PCE2':
         weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
