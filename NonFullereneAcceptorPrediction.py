@@ -119,7 +119,7 @@ def main():
             # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
             fixed_hyperparams.append(False)
             mini_args = (X, y, condition,fixed_hyperparams)
-            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=False,workers=NCPU,updating='deferred')
+            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=False,workers=NCPU,updating='deferred',seed=0)
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
@@ -172,7 +172,7 @@ def main():
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
                     mini_args = (X, y, condition,fixed_hyperparams)
-                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=False,workers=NCPU,updating='deferred')
+                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=False,workers=NCPU,updating='deferred',seed=0)
                     # print best hyperparams
                     best_hyperparams = solver.x
                     best_rmse = solver.fun
@@ -1159,8 +1159,21 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
 #############################
 
 
-
 def get_error_logo(y_pred,y_test):
+    '''
+    '''
+    #error_logo = squared_error(y_pred,y_test) ## SAVE
+    #print('TEST 1 y_pred', type(y_pred), y_pred)
+    #print('TEST 2 y_test', type(y_test), y_test)
+    error_logo = np.log(np.cosh(y_pred-y_test))
+    #print('TEST 3 error_logo', error_logo)
+    error_logo = np.sum(error_logo)
+    #print('TEST 4 error_logo', error_logo)
+    return error_logo
+
+
+
+def get_F_score(y_pred,y_test):
     '''
     '''
     PCE_median = 3.475
@@ -1187,16 +1200,19 @@ def get_error_logo(y_pred,y_test):
     print('FP:', FP)
     print('TN:', TN)
     print('FN:', FN)
-    Precision = TP/(TP+FP)
-    Recall = TP/(TP+FN)
-    F = 2.0 * (Precision*Recall)/(Precision+Recall)
-    print('Precision',Precision)
-    print('Recall',Recall)
-    print('F',F)
-    error_logo = 1 - F
+    if TP >0:
+        Precision = TP/(TP+FP)
+        Recall = TP/(TP+FN)
+        F = 2.0 * (Precision*Recall)/(Precision+Recall)
+        print('Precision',Precision)
+        print('Recall',Recall)
+        print('F',F)
+    else:
+        F = 0
+        print('no TP found. F:', F)
     ###################################
     #error_logo = squared_error(y_pred,y_test) # ERROR as squared error
-    return error_logo
+    return F
 
 
 
@@ -1295,7 +1311,8 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
         logo_weight = 1/((len(sizes)-1)*sizes[m])
     #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
-    error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
+    #error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
+    error_logo = get_F_score(y_pred,y_test)
     print('error_logo',error_logo)
     #########################################
     # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
