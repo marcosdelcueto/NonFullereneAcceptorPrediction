@@ -1146,7 +1146,8 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
                 for i in range(len(sizes)):
                     if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
                 logo_weight = 1/(sum_sizes_n)
-            error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+            #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
+            error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
             #print('Error logo',error_logo)
             #########################################
     print('FINAL LOGO ERROR:', error_logo)
@@ -1156,6 +1157,62 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
 ###### END logo_cv_opt ######
 #############################
 #############################
+
+
+
+def get_error_logo(y_pred,y_test):
+    '''
+    '''
+    PCE_median = 3.475
+    PCE_stdev = 2.42320484626227
+
+    #print('in function y_pred', y_pred)
+    #print('in function y_test', y_test)
+    #for i in range(len(y_pred)):
+        #print(type(y_pred[i]), type(y_test[i]))
+        #print(y_pred[i], y_test[i])
+    #print('error_logo in function:',error_logo)
+    ###################################
+    TP = 0.0
+    FP = 0.0
+    TN = 0.0
+    FN = 0.0
+    for i in range(len(y_pred)):
+        #print(y_pred[i], y_test[i])
+        if y_test[i] > PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: TP = TP + 1.0
+        if y_test[i] < PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: FP = FP + 1.0
+        if y_test[i] < PCE_median+PCE_stdev and y_pred[i] < PCE_median+PCE_stdev: TN = TN + 1.0
+        if y_test[i] > PCE_median+PCE_stdev and y_pred[i] < PCE_median+PCE_stdev: FN = FN + 1.0
+    print('TP:', TP)
+    print('FP:', FP)
+    print('TN:', TN)
+    print('FN:', FN)
+    Precision = TP/(TP+FP)
+    Recall = TP/(TP+FN)
+    F = 2.0 * (Precision*Recall)/(Precision+Recall)
+    print('Precision',Precision)
+    print('Recall',Recall)
+    print('F',F)
+    error_logo = 1 - F
+    ###################################
+    #error_logo = squared_error(y_pred,y_test) # ERROR as squared error
+    return error_logo
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #############################
 #############################
@@ -1237,7 +1294,8 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
         logo_weight = 1.0
     elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
         logo_weight = 1/((len(sizes)-1)*sizes[m])
-    error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test)
+    #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
+    error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
     print('error_logo',error_logo)
     #########################################
     # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
@@ -1321,13 +1379,14 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
         rms  = math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
     # for LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
     else:
-        if final_call==False:
-            rms = error_logo
-        elif final_call==True:
-            if logo_error_type == 'A': 
-                rms = math.sqrt(error_logo/total_N)
-            elif logo_error_type == 'B' or logo_error_type == 'C': 
-                rms = math.sqrt(error_logo)
+        rms = error_logo 
+        #if final_call==False: ### SAVE
+            #rms = error_logo
+        #elif final_call==True:
+            #if logo_error_type == 'A': 
+                #rms = math.sqrt(error_logo/total_N)
+            #elif logo_error_type == 'B' or logo_error_type == 'C': 
+                #rms = math.sqrt(error_logo)
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
     #######################################
@@ -1650,6 +1709,8 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
             Xi_el.append(_x1[ini:fin].reshape(1,-1))
             Xj_el.append(_x2[ini:fin].reshape(1,-1))
             K_el.append(1.0)
+            #print('Xi_el', len(Xi_el[0][0]),Xi_el)
+            #print('Xj_el', len(Xj_el[0][0]),Xj_el)
             if gamma_el[i] != 0.0: K_el[i] = gaussian_kernel(Xi_el[i], Xj_el[i], gamma_el[i])
             K = K * K_el[i]
             if i < len(elec_descrip)-1:
@@ -1662,6 +1723,8 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         Xj_fp_a = _x2[ndesp1:].reshape(1,-1)
         K_fp_d = 1.0
         K_fp_a = 1.0
+        #print('Xi_fp_d', len(Xi_fp_d[0]),Xi_fp_d)
+        #print('Xj_fp_a', len(Xj_fp_a[0]),Xj_fp_a)
         if gamma_d != 0.0: K_fp_d = tanimoto_kernel(Xi_fp_d, Xj_fp_d, gamma_d)
         if gamma_a != 0.0: K_fp_a = tanimoto_kernel(Xi_fp_a, Xj_fp_a, gamma_a)
         # Element-wise multiplication
