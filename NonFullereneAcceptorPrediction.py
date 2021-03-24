@@ -19,7 +19,7 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.svm import SVR
 from sklearn.model_selection import KFold, LeaveOneOut
 from sklearn.kernel_ridge import KernelRidge
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
@@ -339,6 +339,7 @@ def read_initial_values(inp):
     logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
     diff_evol_tol = ast.literal_eval(var_value[var_name.index('diff_evol_tol')])
     diff_evol_pop = ast.literal_eval(var_value[var_name.index('diff_evol_pop')])
+    loss_func = ast.literal_eval(var_value[var_name.index('loss_func')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -398,6 +399,7 @@ def read_initial_values(inp):
         print('### Differential Evolution ##########')
         print('diff_evol_tol = ', diff_evol_tol)
         print('diff_evol_pop = ', diff_evol_pop)
+        print('loss_func = ', loss_func)
     print('### General hyperparameters ##########')
     print('optimize_hyperparams = ', optimize_hyperparams)
     print('gamma_el = ', gamma_el)
@@ -471,6 +473,7 @@ def read_initial_values(inp):
             f_out.write('### Differential Evolution ##########')
             f_out.write('diff_evol_tol %s\n' % str(diff_evol_tol))
             f_out.write('diff_evol_pop %s\n' % str(diff_evol_pop))
+            f_out.write('loss_func %s\n' % str(loss_func))
         f_out.write('### General hyperparameters ##########\n')
         f_out.write('optimize_hyperparams %s\n' % str(optimize_hyperparams))
         f_out.write('gamma_el %s\n' % str(gamma_el))
@@ -496,7 +499,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type,diff_evol_tol,diff_evol_pop)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type,diff_evol_tol,diff_evol_pop,loss_func)
 #############################
 #############################
 ## END read_initial_values ##
@@ -1112,7 +1115,7 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
             y_test  = []
             X_train = []
             y_train = []
-            print('##### Sub n=%i group' %n)
+            #print('##### Sub n=%i group' %n)
             # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
             for i in range(len(X)):
                 if X[i][0] in groups_acceptor_labels[n]:
@@ -1147,7 +1150,7 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
                     if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
                 logo_weight = 1/(sum_sizes_n)
             #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
-            error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
+            error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test,loss_func)
             #print('Error logo',error_logo)
             #########################################
     print('FINAL LOGO ERROR:', error_logo)
@@ -1159,39 +1162,81 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
 #############################
 
 
-def get_error_logo(y_pred,y_test):
+#############################
+#############################
+### START get_error_logo ####
+#############################
+#############################
+def get_error_logo(y_pred,y_test,loss_func):
     '''
+    Function to get the value of the loss function used with LOGO
+
+    Parameters
+    ----------
+    y_pred: 
+
+    y_test:
+
+    loss_func: str
+        label with the loss function
+
+    Rerurns
+    -------
+    error_logo: float
+        value of the loss function
     '''
-    #error_logo = squared_error(y_pred,y_test) ## SAVE
-    #print('TEST 1 y_pred', type(y_pred), y_pred)
-    #print('TEST 2 y_test', type(y_test), y_test)
-    error_logo = np.log(np.cosh(y_pred-y_test))
-    #print('TEST 3 error_logo', error_logo)
-    error_logo = np.sum(error_logo)
-    #print('TEST 4 error_logo', error_logo)
+    ### AE ###
+    if loss_func == 'AE':
+        error_logo = np.absolute(y_pred-y_test)
+    ### MAE ###
+    elif loss_func == 'MAE':
+        error_logo = mean_absolute_error(y_pred,y_test)
+    ### SE ###
+    elif loss_func == 'SE':
+        error_logo = squared_error(y_pred,y_test)
+    ### MSE ###
+    elif loss_func == 'MSE':
+        error_logo = mean_squared_error(y_pred,y_test)
+    ### Log-cosh ###
+    elif loss_func == 'log-cosh':
+        error_logo = np.log(np.cosh(y_pred-y_test))
+        error_logo = np.sum(error_logo)
     return error_logo
+#############################
+#############################
+#### END get_error_logo #####
+#############################
+#############################
 
 
-
+#############################
+#############################
+##### START get_F_score #####
+#############################
+#############################
 def get_F_score(y_pred,y_test):
     '''
+    Function to get the F score of correct predicted PCE>median+stdev
+
+    Parameters
+    ----------
+    y_pred:
+
+    y_test:
+
+    Returns
+    -------
+    F: float
+        value of the F-score
     '''
     PCE_median = 3.475
     PCE_stdev = 2.42320484626227
 
-    #print('in function y_pred', y_pred)
-    #print('in function y_test', y_test)
-    #for i in range(len(y_pred)):
-        #print(type(y_pred[i]), type(y_test[i]))
-        #print(y_pred[i], y_test[i])
-    #print('error_logo in function:',error_logo)
-    ###################################
     TP = 0.0
     FP = 0.0
     TN = 0.0
     FN = 0.0
     for i in range(len(y_pred)):
-        #print(y_pred[i], y_test[i])
         if y_test[i] > PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: TP = TP + 1.0
         if y_test[i] < PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: FP = FP + 1.0
         if y_test[i] < PCE_median+PCE_stdev and y_pred[i] < PCE_median+PCE_stdev: TN = TN + 1.0
@@ -1210,25 +1255,12 @@ def get_F_score(y_pred,y_test):
     else:
         F = 0
         print('no TP found. F:', F)
-    ###################################
-    #error_logo = squared_error(y_pred,y_test) # ERROR as squared error
     return F
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#############################
+#############################
+###### END get_F_score ######
+#############################
+#############################
 
 #############################
 #############################
@@ -1377,12 +1409,12 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
-    print('calc_errors - y_predicted:')
-    print(y_predicted)
-    print('calc_errors - y_real:')
-    print(y_real)
-    print('error_logo:', error_logo)
-    print('total_N:', total_N)
+    #print('calc_errors - y_predicted:')
+    #print(y_predicted)
+    #print('calc_errors - y_real:')
+    #print(y_real)
+    #print('error_logo:', error_logo)
+    #print('total_N:', total_N)
     # Calculate rmse, r and rho
     if weight_RMSE == 'PCE2':
         weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
@@ -1397,6 +1429,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     # for LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
     else:
         rms = error_logo 
+        print('REAL RMSE:', math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights)))
         #if final_call==False: ### SAVE
             #rms = error_logo
         #elif final_call==True:
@@ -1885,7 +1918,7 @@ elec_descrip, xcols, ycols, Ndata, print_log, log_name, NCPU, f_out, FP_length,
 weight_RMSE, CV, kfold, plot_target_predictions, plot_kNN_distances, 
 print_progress_every_x_percent, number_elec_descrip, groups_acceptor_labels, group_test, 
 acceptor_label_column, Nlast, prediction_csv_file_name, columns_labels_prediction_csv, 
-predict_unknown, logo_error_type,diff_evol_tol,diff_evol_pop) = read_initial_values(input_file_name)
+predict_unknown, logo_error_type,diff_evol_tol,diff_evol_pop,loss_func) = read_initial_values(input_file_name)
 ##########################################################
 ################# Execute main function ##################
 ##########################################################

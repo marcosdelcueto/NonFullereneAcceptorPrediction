@@ -39,7 +39,7 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 # Machine Learning Algorithm options ##
 #######################################
 plot_target_predictions = None  		  # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
-ML = 'SVR'                            # 'kNN' or 'KRR' or 'SVR'
+ML = 'KRR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
 CV = 'logo'                           # select 'loo' or 'kf' or 'last' or 'groups' or 'logo'
 kfold = 10                            # only used if CV=kf
@@ -47,16 +47,18 @@ Nlast = 28									  # only used if CV='last'
 acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[0],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27],[17,26]]
 #groups_acceptor_labels = [[0],[1, 2, 3, 7, 10, 22, 27], [4, 8, 11, 17], [5, 12, 19, 23, 24, 29, 32], [6, 9, 14, 16, 18, 25, 26, 30, 31]]
-group_test = 1                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
+group_test = 5                        # only used if CV='groups'. Note that groups start at 0, 1, 2, 3, 4...
 logo_error_type = 'A'                 # only used if CV='logo'. Possible types: 'A', 'B' or 'C'
+loss_func = 'SE'                      # type of loss function used (for now just used with LOGO)
 ### Differential Evolution ############
-diff_evol_tol = 0.01                  # relative tolerance for convergence. Stop when standard deviation is smaller than (tol * mean)
-diff_evol_pop = 50                    # multiplier for total population size. Final size is parameters * diff_evol_pop
+diff_evol_tol = 0.001                 # relative tolerance for convergence. Stop when standard deviation is smaller than (tol * mean)
+diff_evol_pop = 100                   # multiplier for total population size. Final size is parameters * diff_evol_pop
 ### General hyperparameters ###########
-optimize_hyperparams = False   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [1.0]	  						  # hyperparameters with weights of d_el
+optimize_hyperparams = True   		  # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
+gamma_el = [0.003959131349935419]	  # hyperparameters with weights of d_el
 gamma_d  =  0.0 		  					  # hyperparameter with weight of d_fp_d
 gamma_a  =  0.0 	     					  # hyperparameter with weight of d_fp_a
+delta    =  1.0                       # hyperparameter for Huber loss (only used if loss_func = 'huber')
 gamma_el_lim = [(0.0,6.0)] 		     # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)         	  # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)         	  # range in which gamma_a is optimized
@@ -65,7 +67,7 @@ weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Def
 Neighbors = [1,2,3,4,5,6,7,8,9,10] 							  # number of nearest-neighbors
 plot_kNN_distances = None 			 	  # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
-alpha = 1.0   		       			     # kernel hyperparameter
+alpha = 0.209300   		       			     # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)         	  # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
 C = 0.1  	 	             			  # regularization hyperparameter
