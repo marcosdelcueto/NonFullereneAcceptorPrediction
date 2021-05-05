@@ -54,7 +54,30 @@ def main():
             X_a.append(int(float(X2[j])))
         X[i][0]=X_d
         X[i][1]=X_a
+    ############################# START TEST TEST TEST #########################
+    #print('TEST  before X')
+    #for i in range(len(X)):
+        #print(i)
+        #print('d:',X[i][0])
+        #print('a:',X[i][1])
+        #print('e:',X[i][2],X[i][3],X[i][4],X[i][5],X[i][6],X[i][7],X[i][8],X[i][9],X[i][10],X[i][11])
+        #print('e:',X[i][2:])
+    #print('TEST y')
+    #print(y)
+    #sys.exit()
+    ############################# END TEST TEST TEST #########################
     X=preprocess_fn(X)
+    ############################# START TEST TEST TEST #########################
+    #print('TEST after X')
+    #for i in range(len(X)):
+    #for i in range(10):
+        #print(i)
+        #print('d:',X[i][10:2058])
+        #print('a:',X[i][2058:])
+        #print('e:',X[i][0],X[i][1],X[i][2],X[i][3],X[i][4],X[i][5],X[i][6],X[i][7],X[i][8],X[i][9])
+    #sys.exit()
+    ############################# END TEST TEST TEST #########################
+
     ########## Optimize hyperparameters ##########
     if optimize_hyperparams==True:
         fixed_hyperparams = []
@@ -818,6 +841,9 @@ def kf_loo_cv(X,y,ML_algorithm):
         y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         # add predicted values in this CV iteration to list with total
         y_predicted.append(y_pred.tolist())
+        #print('TEST y_train', y_train)
+        #print('TEST y_test', y_test)
+        #print('TEST individual prediction',y_pred.tolist())
         y_real.append(y_test.tolist())
         # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
         if ML=='kNN' and plot_kNN_distances != None:
@@ -832,6 +858,7 @@ def kf_loo_cv(X,y,ML_algorithm):
         if prediction_csv_file_name != None:
             for i in test_index:
                 test_indeces.append(i)
+    #print('TEST final prediction', y_predicted)
     return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
 #############################
 #############################
@@ -940,7 +967,6 @@ def groups_val_preprocess(X,y):
             new_X = np.delete(X[i],0)
             X_test.append(new_X)
             y_test.append(y[i].tolist())
-            # if prediction_csv_file_name != None
             if prediction_csv_file_name != None:
                 test_indeces.append(i)
         else:
@@ -953,6 +979,8 @@ def groups_val_preprocess(X,y):
     for i in range(len(X_test)):
         X_test[i] = X_test[i].tolist()
     y_train = [item for dummy in y_train for item in dummy ]
+    #print('TEST groups_val_preprocess y_train', y_train)
+    #print('TEST groups_val_preprocess y_test', y_test)
     return X_train, y_train, X_test, y_test, test_indeces
 ###############################
 ###############################
@@ -999,7 +1027,9 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
         y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
         y_total_valid.append(y_new_valid.tolist())
         y_predicted.append(y_pred.tolist())
+        #print('TEST groups_val_opt y_new_valid', y_new_valid.tolist())
     y_real.append(y_total_valid)
+    #print('TEST groups_val_opt y_real', y_real)
     return y_real, y_predicted
 #############################
 #############################
@@ -1062,6 +1092,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
         y_test = [item for dummy in y_test for item in dummy ]
         error = np.sqrt((y_pred - y_test)**2)
         kNN_error.append(error)
+    #print('TEST groups_val_final y_real', y_real)
     return y_real, y_predicted, kNN_distances, kNN_error
 #############################
 #############################
@@ -1161,7 +1192,6 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
 #############################
 #############################
 
-
 #############################
 #############################
 ### START get_error_logo ####
@@ -1207,7 +1237,6 @@ def get_error_logo(y_pred,y_test,loss_func):
 #### END get_error_logo #####
 #############################
 #############################
-
 
 #############################
 #############################
