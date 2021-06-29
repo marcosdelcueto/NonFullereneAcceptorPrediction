@@ -15,6 +15,7 @@ The necessary packages (with the tested versions with Python 3.8.5) are specifie
 ```
 pip3 install -r requirements.txt
 ```
+---
 
 ## Usage
 All input parameters are specified in file: **inputNonFullereneAcceptorPrediction.inp**. Input options in this file are separated in different groups:
@@ -33,6 +34,7 @@ python NonFullereneAcceptorPrediction.py
 
 ---
 
-### Authors
+## License
+**Authors**: [Zhi-Wen Zhao](https://github.com/amiswen), [Marcos del Cueto](https://github.com/marcosdelcueto) and Alessandro Troisi
 
-Zhi-Wen Zhao, Marcos del Cueto and Alessandro Troisi
+Licensed under the [MIT License](LICENSE.md) 
