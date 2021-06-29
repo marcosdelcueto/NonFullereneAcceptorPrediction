@@ -1,7 +1,7 @@
 # Non-Fullerene Acceptor Prediction
-This repository contains the database and code for **Training Machine Learning Models to Predict Compounds with Completely New Chemistries: Application to Non-Fullerene Acceptors** by Z-W Zhao, M del Cueto and A Troisi_
+This repository contains the database and code for **Training Machine Learning Models to Predict Compounds with Completely New Chemistries: Application to Non-Fullerene Acceptors** by _Z-W Zhao_, _M del Cueto_ and _A Troisi_
 
-Code is based in our previous [MLPhotovoltaics](https://github.com/marcosdelcueto/MachineLearning_AcceptorDonor) program, with the main addition of performing _LOO-extrapolation_ and _LOGO-extrapolation_. More details on these method can be found in manuscript. These two cross-validations can be controlled with the following keywords:
+Code is based in our previous [MLPhotovoltaics](https://github.com/marcosdelcueto/MachineLearning_AcceptorDonor) program, with the main addition of performing _LOO-extrapolation_ and _LOGO-extrapolation_. More details on these method can be found in manuscript. These two cross-validations can be controlled with the following input keywords:
 
 - **CV='groups'** (LOO-extrapolation) OR **CV='logo'** (LOGO-extrapolation)
 - **acceptor\_label\_column**: allows to set the name of the column that contains the acceptor labels

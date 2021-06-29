@@ -816,9 +816,6 @@ def kf_loo_cv(X,y,ML_algorithm):
         y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
         # add predicted values in this CV iteration to list with total
         y_predicted.append(y_pred.tolist())
-        #print('TEST y_train', y_train)
-        #print('TEST y_test', y_test)
-        #print('TEST individual prediction',y_pred.tolist())
         y_real.append(y_test.tolist())
         # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
         if ML=='kNN' and plot_kNN_distances != None:
@@ -833,7 +830,6 @@ def kf_loo_cv(X,y,ML_algorithm):
         if prediction_csv_file_name != None:
             for i in test_index:
                 test_indeces.append(i)
-    #print('TEST final prediction', y_predicted)
     return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
 #############################
 #############################
@@ -1395,7 +1391,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     rho,_ = spearmanr(y_real, y_predicted)
     if CV != 'logo':
         rms  = math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
-    # for LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
+    # For LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
     else:
         rms = error_logo 
         print('REAL RMSE:', math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights)))
@@ -1600,7 +1596,7 @@ def gaussian_kernel(Xi, Xj, gamma):
     #D2 = np.sum((X1 - X2)**2, axis=2)
     #K = np.exp(-gamma * D2)
     #############################
-    # Alternative (gives same result, if Xi and Xj are just 1 vector):
+    # Alternative (same result, if Xi and Xj are just 1 vector):
     Xi = Xi[0]
     Xj = Xj[0]
     D2 = np.sum((Xi - Xj)**2)
