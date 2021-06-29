@@ -24,7 +24,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
 from sklearn.model_selection import StratifiedKFold, train_test_split
-#np.set_printoptions(threshold=sys.maxsize)
 #################################################################################
 ######################### START CUSTOMIZABLE PARAMETERS #########################
 input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
@@ -38,6 +37,11 @@ input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input fil
 ########################
 ########################
 def main():
+    '''
+    Main function to read database, preprocess data, decide which hyperparams to optimize
+    and call appropriate ML function to train/test model
+    '''
+
     ########## Read data ##########
     df=pd.read_csv(db_file,index_col=0)
     # Preprocess data
@@ -54,30 +58,7 @@ def main():
             X_a.append(int(float(X2[j])))
         X[i][0]=X_d
         X[i][1]=X_a
-    ############################# START TEST TEST TEST #########################
-    #print('TEST  before X')
-    #for i in range(len(X)):
-        #print(i)
-        #print('d:',X[i][0])
-        #print('a:',X[i][1])
-        #print('e:',X[i][2],X[i][3],X[i][4],X[i][5],X[i][6],X[i][7],X[i][8],X[i][9],X[i][10],X[i][11])
-        #print('e:',X[i][2:])
-    #print('TEST y')
-    #print(y)
-    #sys.exit()
-    ############################# END TEST TEST TEST #########################
     X=preprocess_fn(X)
-    ############################# START TEST TEST TEST #########################
-    #print('TEST after X')
-    #for i in range(len(X)):
-    #for i in range(10):
-        #print(i)
-        #print('d:',X[i][10:2058])
-        #print('a:',X[i][2058:])
-        #print('e:',X[i][0],X[i][1],X[i][2],X[i][3],X[i][4],X[i][5],X[i][6],X[i][7],X[i][8],X[i][9])
-    #sys.exit()
-    ############################# END TEST TEST TEST #########################
-
     ########## Optimize hyperparameters ##########
     if optimize_hyperparams==True:
         fixed_hyperparams = []
@@ -174,7 +155,6 @@ def main():
             for k in range(len(Neighbors)):
                 print('kNN, for k = %i' %(Neighbors[k]))
                 if condition=='electronic':
-                    #hyperparams=[gamma_el,gamma_d,gamma_a]
                     fixed_hyperparams.append(Neighbors[k])
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
@@ -359,7 +339,7 @@ def read_initial_values(inp):
     prediction_csv_file_name = ast.literal_eval(var_value[var_name.index('prediction_csv_file_name')])
     columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
     predict_unknown = ast.literal_eval(var_value[var_name.index('predict_unknown')])
-    logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
+    #logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
     diff_evol_tol = ast.literal_eval(var_value[var_name.index('diff_evol_tol')])
     diff_evol_pop = ast.literal_eval(var_value[var_name.index('diff_evol_pop')])
     loss_func = ast.literal_eval(var_value[var_name.index('loss_func')])
@@ -417,7 +397,7 @@ def read_initial_values(inp):
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
-        print('logo_error_type =', logo_error_type)
+        #print('logo_error_type =', logo_error_type)
     if optimize_hyperparams == True:
         print('### Differential Evolution ##########')
         print('diff_evol_tol = ', diff_evol_tol)
@@ -491,7 +471,7 @@ def read_initial_values(inp):
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
-            f_out.write('logo_error_type %s\n' % str(logo_error_type))
+            #f_out.write('logo_error_type %s\n' % str(logo_error_type))
         if optimize_hyperparams == True:
             f_out.write('### Differential Evolution ##########')
             f_out.write('diff_evol_tol %s\n' % str(diff_evol_tol))
@@ -522,7 +502,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,logo_error_type,diff_evol_tol,diff_evol_pop,loss_func)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,diff_evol_tol,diff_evol_pop,loss_func)
 #############################
 #############################
 ## END read_initial_values ##
@@ -733,12 +713,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 if X[i][0] in j:
                     group_size=group_size+1
             sizes.append(group_size)
-        #total_N = 0
-        #print('TEST GROUP SIZE', sizes[group_test])
         total_N = sizes[group_test]
-        #for i in sizes:
-            #total_N = total_N + i
-        #total_N = total_N - sizes[0]  # remove entries from group 0, since we're not really using it
         ########## Do LOGO ##########
         if final_call == False:
             kNN_distances = []
@@ -787,7 +762,7 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 #############################
 def kf_loo_cv(X,y,ML_algorithm):
     '''
-    Function to calculate error metric using a k-fold or LOO cross-validation
+    Function to calculate error metric using a k-fold or LOO cross-validation. aka LOO-interpolation
 
     Parameters
     ----------
@@ -873,7 +848,7 @@ def kf_loo_cv(X,y,ML_algorithm):
 #############################
 def last_val(X,y,ML_algorithm):
     '''
-    Function to calculate error metric using a last-N validation
+    Function to calculate error metric using a last-N validation (deprecated)
 
     Parameters
     ----------
@@ -935,7 +910,7 @@ def last_val(X,y,ML_algorithm):
 ###############################
 def groups_val_preprocess(X,y):
     '''
-    Preprocess data for a novel-group validation
+    Preprocess data for a novel-group validation. aka LOO-extrapolation
 
     Parameters
     ----------
@@ -979,8 +954,6 @@ def groups_val_preprocess(X,y):
     for i in range(len(X_test)):
         X_test[i] = X_test[i].tolist()
     y_train = [item for dummy in y_train for item in dummy ]
-    #print('TEST groups_val_preprocess y_train', y_train)
-    #print('TEST groups_val_preprocess y_test', y_test)
     return X_train, y_train, X_test, y_test, test_indeces
 ###############################
 ###############################
@@ -995,7 +968,7 @@ def groups_val_preprocess(X,y):
 #############################
 def groups_val_opt(X_train,y_train,ML_algorithm):
     '''
-    Function to calculate error metric during hyperparameter optimization using a novel-group validation
+    Function to calculate error metric during hyperparameter optimization using a novel-group validation. aka LOO-extrapolation
 
     Parameters
     ----------
@@ -1027,9 +1000,7 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
         y_pred = ML_algorithm.fit(X_new_train, y_new_train).predict(X_new_valid)
         y_total_valid.append(y_new_valid.tolist())
         y_predicted.append(y_pred.tolist())
-        #print('TEST groups_val_opt y_new_valid', y_new_valid.tolist())
     y_real.append(y_total_valid)
-    #print('TEST groups_val_opt y_real', y_real)
     return y_real, y_predicted
 #############################
 #############################
@@ -1044,7 +1015,7 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
 #############################
 def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
     '''
-    Function to calculate error metric using a novel-group validation, with already optimized hyperparams
+    Function to calculate error metric using a novel-group validation (aka LOO-extrapolation), with already optimized hyperparams
 
     Parameters
     ----------
@@ -1092,7 +1063,6 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
         y_test = [item for dummy in y_test for item in dummy ]
         error = np.sqrt((y_pred - y_test)**2)
         kNN_error.append(error)
-    #print('TEST groups_val_final y_real', y_real)
     return y_real, y_predicted, kNN_distances, kNN_error
 #############################
 #############################
@@ -1107,7 +1077,7 @@ def groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm):
 #############################
 def logo_cv_opt(X,y,ML_algorithm,sizes):
     '''
-    Function to calculate error metric during hyperparameter optimization using a LOGO cross-validation
+    Function to calculate error metric during hyperparameter optimization using a LOGO cross-validation (aka LOGO-extrapolation)
 
     Parameters
     ----------
@@ -1146,16 +1116,15 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
             y_test  = []
             X_train = []
             y_train = []
-            #print('##### Sub n=%i group' %n)
             # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
             for i in range(len(X)):
-                if X[i][0] in groups_acceptor_labels[n]:
+                if X[i][0] in groups_acceptor_labels[n]: # if point is in group n: add it to test
                     new_X = np.delete(X[i],0)
                     X_test.append(new_X)
                     y_test.append(y[i].tolist())
-                elif X[i][0] in groups_acceptor_labels[m]:
+                elif X[i][0] in groups_acceptor_labels[m]: # if point in in group m: ignore it
                     pass
-                else:
+                else: # if point is not in m or n: add it to train
                     new_X = np.delete(X[i],0)
                     X_train.append(new_X)
                     y_train.append(y[i])
@@ -1168,21 +1137,7 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
             y_real.append(y_test)
             #########################################
             y_test = [item for sublist in y_test for item in sublist]
-            # Weight A
-            if logo_error_type == 'A':
-                logo_weight = 1.0
-            # Weight B
-            elif logo_error_type == 'B':
-                logo_weight = 1/((len(sizes)-2)*sizes[n])
-            # Weight C
-            elif logo_error_type == 'C':
-                sum_sizes_n = 0
-                for i in range(len(sizes)):
-                    if i != m and i !=0: sum_sizes_n = sum_sizes_n + sizes[i] # ignore group0
-                logo_weight = 1/(sum_sizes_n)
-            #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
-            error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test,loss_func)
-            #print('Error logo',error_logo)
+            error_logo = error_logo + get_error_logo(y_pred,y_test,loss_func)
             #########################################
     print('FINAL LOGO ERROR:', error_logo)
     return y_real, y_predicted, test_indeces, error_logo
@@ -1199,7 +1154,7 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
 #############################
 def get_error_logo(y_pred,y_test,loss_func):
     '''
-    Function to get the value of the loss function used with LOGO
+    Function to get the value of the loss function used with LOGO (aka LOGO-extrapolation)
 
     Parameters
     ----------
@@ -1245,7 +1200,7 @@ def get_error_logo(y_pred,y_test,loss_func):
 #############################
 def get_F_score(y_pred,y_test):
     '''
-    Function to get the F score of correct predicted PCE>median+stdev
+    Function to get the F score of correct predicted PCE>median
 
     Parameters
     ----------
@@ -1259,17 +1214,16 @@ def get_F_score(y_pred,y_test):
         value of the F-score
     '''
     PCE_median = 3.475
-    PCE_stdev = 2.42320484626227
 
     TP = 0.0
     FP = 0.0
     TN = 0.0
     FN = 0.0
     for i in range(len(y_pred)):
-        if y_test[i] > PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: TP = TP + 1.0
-        if y_test[i] < PCE_median+PCE_stdev and y_pred[i] > PCE_median+PCE_stdev: FP = FP + 1.0
-        if y_test[i] < PCE_median+PCE_stdev and y_pred[i] < PCE_median+PCE_stdev: TN = TN + 1.0
-        if y_test[i] > PCE_median+PCE_stdev and y_pred[i] < PCE_median+PCE_stdev: FN = FN + 1.0
+        if y_test[i] > PCE_median and y_pred[i] > PCE_median: TP = TP + 1.0
+        if y_test[i] < PCE_median and y_pred[i] > PCE_median: FP = FP + 1.0
+        if y_test[i] < PCE_median and y_pred[i] < PCE_median: TN = TN + 1.0
+        if y_test[i] > PCE_median and y_pred[i] < PCE_median: FN = FN + 1.0
     print('TP:', TP)
     print('FP:', FP)
     print('TN:', TN)
@@ -1298,7 +1252,7 @@ def get_F_score(y_pred,y_test):
 #############################
 def logo_cv_final(X,y,ML_algorithm,sizes):
     '''
-    Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
+    Function to calculate error metric using a LOGO cross-validation (aka LOGO-extrapolation), with already optimized hyperparams
 
     Parameters
     ----------
@@ -1344,14 +1298,12 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     # Use labels to assign X_train and X_test (X_train and X_test don't contain the label already)
     for i in range(len(X)):
         if X[i][0] in groups_acceptor_labels[m]:
-            #print('In test:', i, X[i][0])
             new_X = np.delete(X[i],0)
             X_test.append(new_X)
             y_test.append(y[i].tolist())
             if prediction_csv_file_name != None:
                 test_indeces.append(i)
         else:
-            #print('In train:', i, X[i][0])
             new_X = np.delete(X[i],0)
             X_train.append(new_X)
             y_train.append(y[i])
@@ -1367,12 +1319,6 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     print(y_test)
     #########################################
     y_test = [item for sublist in y_test for item in sublist]
-    if logo_error_type == 'A':  ### Weight A
-        logo_weight = 1.0
-    elif logo_error_type == 'B' or logo_error_type == 'C':  ### Weight B or C
-        logo_weight = 1/((len(sizes)-1)*sizes[m])
-    #error_logo = error_logo +  logo_weight * squared_error(y_pred,y_test) ### SAVE
-    #error_logo = error_logo +  logo_weight * get_error_logo(y_pred,y_test)
     error_logo = get_F_score(y_pred,y_test)
     print('error_logo',error_logo)
     #########################################
@@ -1399,7 +1345,7 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
 #############################
 def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a):
     '''
-    Function to calculate error metric using a LOGO cross-validation, with already optimized hyperparams
+    Function to calculate error metric using a LOGO cross-validation (aka LOGO-extrapolation), with already optimized hyperparams
 
     Parameters
     ----------
@@ -1438,12 +1384,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
-    #print('calc_errors - y_predicted:')
-    #print(y_predicted)
-    #print('calc_errors - y_real:')
-    #print(y_real)
-    #print('error_logo:', error_logo)
-    #print('total_N:', total_N)
     # Calculate rmse, r and rho
     if weight_RMSE == 'PCE2':
         weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
@@ -1459,13 +1399,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     else:
         rms = error_logo 
         print('REAL RMSE:', math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights)))
-        #if final_call==False: ### SAVE
-            #rms = error_logo
-        #elif final_call==True:
-            #if logo_error_type == 'A': 
-                #rms = math.sqrt(error_logo/total_N)
-            #elif logo_error_type == 'B' or logo_error_type == 'C': 
-                #rms = math.sqrt(error_logo)
     y_real_array=np.array(y_real)
     y_predicted_array=np.array(y_predicted)
     #######################################
@@ -1506,11 +1439,11 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     if print_log==True:
         f_out.write('New %s call: \n' %(ML))
         if ML=='kNN': 
-            f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, error: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         elif ML=='KRR': 
-            f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, rmse: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, error: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         elif ML=='SVR': 
-            f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   rmse: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   error: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
         f_out.flush()
     return rms
 #############################
@@ -1712,7 +1645,7 @@ def tanimoto_kernel(Xi, Xj, gamma):
     #T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
     #K = np.exp(-gamma * (1 - T)**2)
     #############################
-    # Alternative (gives same result, if Xi and Xj are just 1 vector):
+    # Alternative (same result, if Xi and Xj are just 1 vector):
     Xi = Xi[0]
     Xj = Xj[0]
     T = ( np.dot(np.transpose(Xi),Xj) ) / ( np.dot(np.transpose(Xi),Xi) + np.dot(np.transpose(Xj),Xj) - np.dot(np.transpose(Xi),Xj) )
@@ -1788,8 +1721,6 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
             Xi_el.append(_x1[ini:fin].reshape(1,-1))
             Xj_el.append(_x2[ini:fin].reshape(1,-1))
             K_el.append(1.0)
-            #print('Xi_el', len(Xi_el[0][0]),Xi_el)
-            #print('Xj_el', len(Xj_el[0][0]),Xj_el)
             if gamma_el[i] != 0.0: K_el[i] = gaussian_kernel(Xi_el[i], Xj_el[i], gamma_el[i])
             K = K * K_el[i]
             if i < len(elec_descrip)-1:
@@ -1802,8 +1733,6 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
         Xj_fp_a = _x2[ndesp1:].reshape(1,-1)
         K_fp_d = 1.0
         K_fp_a = 1.0
-        #print('Xi_fp_d', len(Xi_fp_d[0]),Xi_fp_d)
-        #print('Xj_fp_a', len(Xj_fp_a[0]),Xj_fp_a)
         if gamma_d != 0.0: K_fp_d = tanimoto_kernel(Xi_fp_d, Xj_fp_d, gamma_d)
         if gamma_a != 0.0: K_fp_a = tanimoto_kernel(Xi_fp_a, Xj_fp_a, gamma_a)
         # Element-wise multiplication
@@ -1947,7 +1876,7 @@ elec_descrip, xcols, ycols, Ndata, print_log, log_name, NCPU, f_out, FP_length,
 weight_RMSE, CV, kfold, plot_target_predictions, plot_kNN_distances, 
 print_progress_every_x_percent, number_elec_descrip, groups_acceptor_labels, group_test, 
 acceptor_label_column, Nlast, prediction_csv_file_name, columns_labels_prediction_csv, 
-predict_unknown, logo_error_type,diff_evol_tol,diff_evol_pop,loss_func) = read_initial_values(input_file_name)
+predict_unknown, diff_evol_tol,diff_evol_pop,loss_func) = read_initial_values(input_file_name)
 ##########################################################
 ################# Execute main function ##################
 ##########################################################
