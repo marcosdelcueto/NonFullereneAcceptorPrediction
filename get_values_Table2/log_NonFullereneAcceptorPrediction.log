@@ -1,0 +1,52 @@
+##### START PRINT INPUT OPTIONS ######
+######################################
+########### Parallelization ##########
+######################################
+NCPU 1
+######################################
+############ Verbose options #########
+######################################
+print_log True
+log_name log_NonFullereneAcceptorPrediction.log
+print_progress_every_x_percent 10
+######################################
+######### Data base options ##########
+######################################
+db_file database.csv
+Ndata 566
+xcols [['SMILES-DFP', 'SMILES-AFP'], ['ACCEPTORNo', 'HOMO-D', 'LUMO-D', 'LUMO-A', 'Reor-D', 'Reor-A', 'sum of f-D', 'sum of f-A', 'XLOGP3-D', 'XLOGP3-A']]
+ycols ['PCE']
+FP_length 2048
+predict_unknown False
+#######################################
+####### Output prediction csv #########
+#######################################
+prediction_csv_file_name pred_G5.csv
+columns_labels_prediction_csv []
+######################################
+# Machine Learning Algorithm options #
+######################################
+plot_target_predictions None
+ML KRR
+### Cross Validation #################
+CV logo
+acceptor_label_column ACCEPTORNo
+groups_acceptor_labels [[0], [1, 8, 9, 12, 16, 18, 19], [23, 31, 32], [7, 29, 30], [3, 4, 5, 6], [17, 22, 24, 25, 26, 27]]
+group_test 5
+### General hyperparameters ##########
+optimize_hyperparams False
+gamma_el [0.0043]
+gamma_d 0.0
+gamma_a 0.0
+gamma_el_lim [(0.0, 6.0)]
+gamma_d_lim (0.0, 6.0)
+gamma_a_lim (0.0, 6.0)
+weight_RMSE linear
+### Kernel Ridge Regression ("KRR") ##
+alpha 0.659
+alpha_lim (0.0, 10.0)
+####### END PRINT INPUT OPTIONS ######
+Hyperparameters are not being optimized 
+New KRR call: 
+alpha: 0.659000, gamma_el: [0.0043], gamma_d: 0.000000 gamma_a: 0.000000, r: 0.038515, rho: 0.080000, error: 0.958333 
+Process took 2.84 seconds

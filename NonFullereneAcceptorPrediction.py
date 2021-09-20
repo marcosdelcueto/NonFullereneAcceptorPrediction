@@ -1586,16 +1586,6 @@ def gaussian_kernel(Xi, Xj, gamma):
         Kernel matrix element.
     '''
     #############################
-    # Daniele's - (sanity check):
-    #m1 = Xi.shape[0]
-    #m2 = Xi.shape[0]
-    #X1 = Xi[:,np.newaxis,:]
-    #X1 = np.repeat(X1, m2, axis=1)
-    #X2 = Xj[np.newaxis,:,:]
-    #X2 = np.repeat(X2, m1, axis=0)
-    #D2 = np.sum((X1 - X2)**2, axis=2)
-    #K = np.exp(-gamma * D2)
-    #############################
     # Alternative (same result, if Xi and Xj are just 1 vector):
     Xi = Xi[0]
     Xj = Xj[0]
@@ -1632,14 +1622,6 @@ def tanimoto_kernel(Xi, Xj, gamma):
     K: np.float.
         Kernel matrix element.
     '''
-    #############################
-    # Daniele's - (sanity check):
-    #m1 = Xi.shape[0]
-    #m2 = Xj.shape[0]
-    #Xii = np.repeat(np.linalg.norm(Xi, axis=1, keepdims=True)**2, m2, axis=1)
-    #Xjj = np.repeat(np.linalg.norm(Xj, axis=1, keepdims=True).T**2, m1, axis=0)
-    #T = np.dot(Xi, Xj.T) / (Xii + Xjj - np.dot(Xi, Xj.T))
-    #K = np.exp(-gamma * (1 - T)**2)
     #############################
     # Alternative (same result, if Xi and Xj are just 1 vector):
     Xi = Xi[0]
@@ -1775,17 +1757,6 @@ def plot_scatter(x, y, plot_type, plot_name):
     ax.scatter(x, y, color="b")
     ax.tick_params(axis='both', which='major', direction='in', labelsize=10, pad=10, length=5)
     #######################################################################
-    ##### SAVE #####
-    # options for plot_target_predictions
-    #if plot_type == 'plot_target_predictions':
-        #ax.set_xlabel(r"PCE / %", size=24, labelpad=10)
-        #ax.set_ylabel(r'PCE$^{%s}$ / %s' %(ML,"%"), size=24, labelpad=10)
-        #ax.set_xlim(0, ma)
-        #ax.set_ylim(0, ma)
-        #ax.set_aspect('equal')
-        #ax.plot(np.arange(0, ma + 0.1, 0.1), np.arange(0, ma + 0.1, 0.1), color="k", ls="--")
-        #ax.annotate(u'$r$ = %.2f' % r, xy=(0.15,0.85), xycoords='axes fraction', size=22)
-    #######################################################################
     # options for plot_target_predictions
     if plot_type == 'plot_target_predictions':
         ax.set_xlabel(r"PCE / %", size=15, labelpad=10)
@@ -1861,7 +1832,12 @@ def squared_error(x1,x2):
 #############################
 #############################
 
-
+if len(sys.argv)==2:
+    print('Overriging input by argument')
+    input_file_name = sys.argv[1]
+elif  len(sys.argv)>2:
+   print('ERROR: no more than one argument accepted')
+   sys.exit()
 #########################################################
 ################### Read input values ###################
 #########################################################
