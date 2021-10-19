@@ -1,5 +1,5 @@
 #######################################
-### File containing input options for MLPhotovoltaics.py
+### File containing input options for NonFullereneAcceptorPrediction.py
 ### The name of this file can be changed, but then also need to update 'input_file_name' in NonFullereneAcceptorPrediction.py
 ### Lines that start with '#' are ignored. All comments after '#' are ignored. Empty lines are ignored
 ### Options can be in any order
