@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-# Marcos del Cueto
-# Department of Chemistry and Materials Innovation Factory, University of Liverpool
-# For any queries about the code: m.del-cueto@liverpool.ac.uk
-# Warning: be careful when using more than one gamma_el: not tested with new cross-validations
+#################################################################################
+##### WARNING: code uses global variables, which may affect its portability #####
 #################################################################################
 import re
 import sys
@@ -12,18 +10,17 @@ import functools
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
-from matplotlib import ticker, gridspec, cm
+from matplotlib import ticker, gridspec
 from time import time
 from scipy.optimize import differential_evolution
-from scipy.stats import pearsonr, spearmanr
+from scipy.stats import pearsonr
 from sklearn.svm import SVR
-from sklearn.model_selection import KFold, LeaveOneOut
+from sklearn.model_selection import LeaveOneOut
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
-from sklearn.model_selection import StratifiedKFold, train_test_split
 #################################################################################
 ######################### START CUSTOMIZABLE PARAMETERS #########################
 input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
@@ -330,7 +327,6 @@ def read_initial_values(inp):
     NCPU = ast.literal_eval(var_value[var_name.index('NCPU')])                # select number of CPUs (-1 means all CPUs in a node)
     FP_length = ast.literal_eval(var_value[var_name.index('FP_length')])      # select number of CPUs (-1 means all CPUs in a node)
     weight_RMSE = ast.literal_eval(var_value[var_name.index('weight_RMSE')])  # select number of CPUs (-1 means all CPUs in a node)
-    kfold = ast.literal_eval(var_value[var_name.index('kfold')])
     Nlast = ast.literal_eval(var_value[var_name.index('Nlast')])
     plot_target_predictions = ast.literal_eval(var_value[var_name.index('plot_target_predictions')])
     plot_kNN_distances = ast.literal_eval(var_value[var_name.index('plot_kNN_distances')])
@@ -342,7 +338,6 @@ def read_initial_values(inp):
     #logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
     diff_evol_tol = ast.literal_eval(var_value[var_name.index('diff_evol_tol')])
     diff_evol_pop = ast.literal_eval(var_value[var_name.index('diff_evol_pop')])
-    loss_func = ast.literal_eval(var_value[var_name.index('loss_func')])
 
     # Perform sanity check to see that the dimension of gamma_el and gamma_el_lim is the same as the number of xcols_elecX
     if number_elec_descrip != len(gamma_el) or number_elec_descrip != len(gamma_el_lim):
@@ -389,11 +384,8 @@ def read_initial_values(inp):
     print('ML =', ML)
     print('### Cross Validation #################')
     print('CV =', CV)
-    if CV == 'kf':
-        print('kfold =', kfold)
-    elif CV == 'last': 
-        print('Nlast =', Nlast)
-    elif CV == 'groups' or CV=='logo':
+    print('Nlast =', Nlast)
+    if CV == 'groups' or CV=='logo':
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
@@ -402,7 +394,6 @@ def read_initial_values(inp):
         print('### Differential Evolution ##########')
         print('diff_evol_tol = ', diff_evol_tol)
         print('diff_evol_pop = ', diff_evol_pop)
-        print('loss_func = ', loss_func)
     print('### General hyperparameters ##########')
     print('optimize_hyperparams = ', optimize_hyperparams)
     print('gamma_el = ', gamma_el)
@@ -462,12 +453,8 @@ def read_initial_values(inp):
         f_out.write('ML %s\n' % str(ML))
         f_out.write('### Cross Validation #################\n')
         f_out.write('CV %s\n' % str(CV))
-
-        if CV=='kf': 
-            f_out.write('kfold %s\n' % str(kfold))
-        elif CV=='last': 
-            f_out.write('Nlast %s\n' % str(Nlast))
-        elif CV=='groups' or CV=='logo':
+        f_out.write('Nlast %s\n' % str(Nlast))
+        if CV=='groups' or CV=='logo':
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
@@ -476,7 +463,6 @@ def read_initial_values(inp):
             f_out.write('### Differential Evolution ##########')
             f_out.write('diff_evol_tol %s\n' % str(diff_evol_tol))
             f_out.write('diff_evol_pop %s\n' % str(diff_evol_pop))
-            f_out.write('loss_func %s\n' % str(loss_func))
         f_out.write('### General hyperparameters ##########\n')
         f_out.write('optimize_hyperparams %s\n' % str(optimize_hyperparams))
         f_out.write('gamma_el %s\n' % str(gamma_el))
@@ -502,7 +488,7 @@ def read_initial_values(inp):
             f_out.write('epsilon_lim %s\n' % str(epsilon_lim))
         f_out.write('####### END PRINT INPUT OPTIONS ######\n')
 
-    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,kfold,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,diff_evol_tol,diff_evol_pop,loss_func)
+    return (ML,Neighbors,alpha,gamma_el,gamma_d,gamma_a,C,epsilon,optimize_hyperparams,alpha_lim,gamma_el_lim,gamma_d_lim,gamma_a_lim,C_lim,epsilon_lim,db_file,elec_descrip,xcols,ycols,Ndata,print_log,log_name,NCPU,f_out,FP_length,weight_RMSE,CV,plot_target_predictions,plot_kNN_distances,print_progress_every_x_percent,number_elec_descrip,groups_acceptor_labels,group_test,acceptor_label_column,Nlast,prediction_csv_file_name,columns_labels_prediction_csv,predict_unknown,diff_evol_tol,diff_evol_pop)
 #############################
 #############################
 ## END read_initial_values ##
@@ -551,7 +537,9 @@ def preprocess_fn(X):
         ########## Transform X_el using scaler (except label) ##########
         for i in range(Ndata):
             X_el[i] = X_el[i][1:]          # drop label for scaling
-        X_el = xscaler.fit_transform(X_el) # scale electronic descriptors
+        #X_el = xscaler.fit_transform(X_el) # scale electronic descriptors
+        xscaler.fit(X_el[:len(X_el)-Nlast])
+        X_el = xscaler.transform(X_el)
         ########## Add label and the rest of scaled values into X_el ##########
         new_X_el = []
         for i in range(Ndata):
@@ -561,7 +549,7 @@ def preprocess_fn(X):
                 new_list.append(X_el[i][j])       # add scaled electronic descriptors (styored in X_el) to new_list
             new_X_el.append(new_list)             # create new_X_el by adding new_lists
         X_el = list(new_X_el)                     # rename new_X_el as X_el
-    ########## For kf, loo and last ##########
+    ########## For loo  ##########
     else:
         X_el = xscaler.fit_transform(X_el)
     ########## Put together final X combining X_el, X_fp_d and X_fp_a
@@ -626,6 +614,7 @@ def custom_distance(X1,X2,gamma_el,gamma_d,gamma_a):
         if j < len(elec_descrip)-1:
             ini = elec_descrip[j]
             fin = elec_descrip[j] + elec_descrip[j+1]
+
     return distance
 #############################
 #############################
@@ -739,13 +728,9 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
                 y_real, y_predicted, kNN_distances, kNN_error = groups_val_final(X_train, y_train, X_test, y_test, ML_algorithm)
         #################################################################
         # Do regular cross-validation
-        elif CV == 'kf' or CV == 'loo':
-            y_real, y_predicted, test_indeces, kNN_distances, kNN_error = kf_loo_cv(X,y,ML_algorithm)
+        elif CV == 'loo':
+            y_real, y_predicted, test_indeces, kNN_distances, kNN_error = loo_cv(X,y,ML_algorithm)
         #################################################################
-        # Do last-N validation
-        elif CV =='last':
-            y_real, y_predicted, test_indeces, kNN_distances, kNN_error = last_val(X,y,ML_algorithm)
-    #################################################################
     ########## Get prediction errors ##########
     rms = get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,error_logo,total_N,final_call,ML_algorithm,gamma_el,gamma_d,gamma_a)
     return rms 
@@ -757,10 +742,10 @@ def func_ML(hyperparams,X,y,condition,fixed_hyperparams):
 
 #############################
 #############################
-####### START kf_loo_cv #####
+####### START loo_cv #####
 #############################
 #############################
-def kf_loo_cv(X,y,ML_algorithm):
+def loo_cv(X,y,ML_algorithm):
     '''
     Function to calculate error metric using a k-fold or LOO cross-validation. aka LOO-interpolation
 
@@ -794,10 +779,7 @@ def kf_loo_cv(X,y,ML_algorithm):
     kNN_distances  = []
     test_indeces   = []
     # Cross-Validation
-    if CV=='kf':
-        cv = KFold(n_splits=kfold,shuffle=True)
-    elif CV=='loo':
-        cv = LeaveOneOut()
+    cv = LeaveOneOut()
     for train_index, test_index in cv.split(X):
         # Print progress
         if CV=='loo':
@@ -806,8 +788,6 @@ def kf_loo_cv(X,y,ML_algorithm):
             if prog >= print_progress_every_x_percent*progress_count:
                 print('Progress %.0f%s' %(prog, '%'), flush=True)
                 progress_count = progress_count + 1
-        elif CV=='kf':
-            print('Step',counter," / ", kfold,flush=True)
         counter=counter+1
         # assign train and test indeces
         X_train,X_test=X[train_index],X[test_index]
@@ -833,69 +813,7 @@ def kf_loo_cv(X,y,ML_algorithm):
     return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
 #############################
 #############################
-######## END kf_loo_cv ######
-#############################
-#############################
-
-#############################
-#############################
-####### START last_val ######
-#############################
-#############################
-def last_val(X,y,ML_algorithm):
-    '''
-    Function to calculate error metric using a last-N validation (deprecated)
-
-    Parameters
-    ----------
-    X: np.array
-        array containing descriptors
-    y: np.array
-        array containing target property
-    ML_algorithm: sklearn object
-        object containing the ML model structure
-
-    Returns
-    -------
-    y_real: list
-        actual values of the target property
-    y_predicted: list
-        predicted values of the target property
-    test_indeces: list
-        indeces of points predicted (used to print into 'prediction_csv_file_name')
-    kNN_distances: list
-        average distances of predicted points with their k nearest neighbors (used to plot into 'plot_kNN_distances')
-    kNN_error: list
-        kNN predictions errors (used to plot into 'plot_kNN_distances')
-    '''
-    y_real        = []
-    y_predicted   = []
-    kNN_error     = []
-    kNN_distances = []
-    test_indeces  = []
-    X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=Nlast,random_state=None,shuffle=False)
-    # predict y values
-    y_pred = ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
-    # add predicted values to list with total
-    y_predicted.append(y_pred.tolist())
-    y_real.append(y_test.tolist())
-    # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
-    if ML=='kNN' and plot_kNN_distances != None:
-        provi_kNN_dist=ML_algorithm.kneighbors(X_test)
-        for i in range(len(provi_kNN_dist[0])):
-            kNN_dist=np.mean(provi_kNN_dist[0][i])
-            kNN_distances.append(kNN_dist)
-        y_test = [item for dummy in y_test for item in dummy ]
-        error = np.sqrt((y_pred - y_test)**2)
-        kNN_error.append(error)
-    # if prediction_csv_file_name != None
-    if prediction_csv_file_name != None:
-        for i in range(Ndata-Nlast,Ndata):
-            test_indeces.append(i)
-    return y_real, y_predicted, test_indeces, kNN_distances, kNN_error
-#############################
-#############################
-######## END last_val #######
+######## END loo_cv ######
 #############################
 #############################
 
@@ -988,7 +906,6 @@ def groups_val_opt(X_train,y_train,ML_algorithm):
     X_train = np.array(X_train)
     y_train = np.array(y_train)
     cv = LeaveOneOut()
-    #cv = KFold(n_splits=kfold,shuffle=True)
     y_total_valid = []
     for train_index, valid_index in cv.split(X_train):
         X_new_train,X_new_valid=X_train[train_index],X_train[valid_index]
@@ -1133,111 +1050,13 @@ def logo_cv_opt(X,y,ML_algorithm,sizes):
             y_real.append(y_test)
             #########################################
             y_test = [item for sublist in y_test for item in sublist]
-            error_logo = error_logo + get_error_logo(y_pred,y_test,loss_func)
+            error_logo = error_logo + mean_squared_error(y_pred,y_test)
             #########################################
     print('FINAL LOGO ERROR:', error_logo)
     return y_real, y_predicted, test_indeces, error_logo
 #############################
 #############################
 ###### END logo_cv_opt ######
-#############################
-#############################
-
-#############################
-#############################
-### START get_error_logo ####
-#############################
-#############################
-def get_error_logo(y_pred,y_test,loss_func):
-    '''
-    Function to get the value of the loss function used with LOGO (aka LOGO-extrapolation)
-
-    Parameters
-    ----------
-    y_pred: 
-
-    y_test:
-
-    loss_func: str
-        label with the loss function
-
-    Rerurns
-    -------
-    error_logo: float
-        value of the loss function
-    '''
-    ### AE ###
-    if loss_func == 'AE':
-        error_logo = np.absolute(y_pred-y_test)
-    ### MAE ###
-    elif loss_func == 'MAE':
-        error_logo = mean_absolute_error(y_pred,y_test)
-    ### SE ###
-    elif loss_func == 'SE':
-        error_logo = squared_error(y_pred,y_test)
-    ### MSE ###
-    elif loss_func == 'MSE':
-        error_logo = mean_squared_error(y_pred,y_test)
-    ### Log-cosh ###
-    elif loss_func == 'log-cosh':
-        error_logo = np.log(np.cosh(y_pred-y_test))
-        error_logo = np.sum(error_logo)
-    return error_logo
-#############################
-#############################
-#### END get_error_logo #####
-#############################
-#############################
-
-#############################
-#############################
-##### START get_F_score #####
-#############################
-#############################
-def get_F_score(y_pred,y_test):
-    '''
-    Function to get the F score of correct predicted PCE>median
-
-    Parameters
-    ----------
-    y_pred:
-
-    y_test:
-
-    Returns
-    -------
-    F: float
-        value of the F-score
-    '''
-    PCE_median = 3.475
-
-    TP = 0.0
-    FP = 0.0
-    TN = 0.0
-    FN = 0.0
-    for i in range(len(y_pred)):
-        if y_test[i] > PCE_median and y_pred[i] > PCE_median: TP = TP + 1.0
-        if y_test[i] < PCE_median and y_pred[i] > PCE_median: FP = FP + 1.0
-        if y_test[i] < PCE_median and y_pred[i] < PCE_median: TN = TN + 1.0
-        if y_test[i] > PCE_median and y_pred[i] < PCE_median: FN = FN + 1.0
-    print('TP:', TP)
-    print('FP:', FP)
-    print('TN:', TN)
-    print('FN:', FN)
-    if TP >0:
-        Precision = TP/(TP+FP)
-        Recall = TP/(TP+FN)
-        F = 2.0 * (Precision*Recall)/(Precision+Recall)
-        print('Precision',Precision)
-        print('Recall',Recall)
-        print('F',F)
-    else:
-        F = 0
-        print('no TP found. F:', F)
-    return F
-#############################
-#############################
-###### END get_F_score ######
 #############################
 #############################
 
@@ -1309,14 +1128,9 @@ def logo_cv_final(X,y,ML_algorithm,sizes):
     y_pred=ML_algorithm.fit(X_train, y_train.ravel()).predict(X_test)
     y_predicted.append(y_pred.tolist())
     y_real.append(y_test)
-    print('y_pred:')
-    print(y_pred)
-    print('y_test:')
-    print(y_test)
     #########################################
     y_test = [item for sublist in y_test for item in sublist]
-    error_logo = get_F_score(y_pred,y_test)
-    print('error_logo',error_logo)
+    error_logo = squared_error(y_pred,y_test)
     #########################################
     # if kNN and plot_kNN_distances != None: calculate lists with kNN_distances and kNN_error
     if ML=='kNN' and plot_kNN_distances != None:
@@ -1380,7 +1194,7 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     y_real = [item for dummy in y_real for item in dummy ]
     y_predicted = [item for dummy in y_predicted for item in dummy ]
     y_real = [item for dummy in y_real for item in dummy ]
-    # Calculate rmse, r and rho
+    # Calculate rmse, r
     if weight_RMSE == 'PCE2':
         weights = np.square(y_real) / np.linalg.norm(np.square(y_real)) #weights proportional to PCE**2 
     elif weight_RMSE == 'PCE':
@@ -1388,7 +1202,6 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
     elif weight_RMSE == 'linear':
         weights = np.ones_like(y_real)
     r,_   = pearsonr(y_real, y_predicted)
-    rho,_ = spearmanr(y_real, y_predicted)
     if CV != 'logo':
         rms  = math.sqrt(mean_squared_error(y_real, y_predicted,sample_weight=weights))
     # For LOGO, use error_logo (weighted squared error) during optimization. For final step, transform to actual rmse
@@ -1427,19 +1240,19 @@ def get_pred_errors(y_real,y_predicted,test_indeces,kNN_distances,kNN_error,erro
         rms=0.0
     print('New', ML, 'call:')
     if ML=='kNN': 
-        print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+        print('k:', ML_algorithm.get_params()['n_neighbors'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rmse:', rms,flush=True)
     elif ML=='KRR': 
-        print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+        print('alpha:', ML_algorithm.get_params()['alpha'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rmse:', rms,flush=True)
     elif ML=='SVR': 
-        print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rho:', rho, 'rmse:', rms,flush=True)
+        print('C:', ML_algorithm.get_params()['C'], 'epsilon:', ML_algorithm.get_params()['epsilon'], 'gamma_el:', gamma_el, 'gamma_d:', gamma_d, 'gamma_a:', gamma_a, 'r:', r, 'rmse:', rms,flush=True)
     if print_log==True:
         f_out.write('New %s call: \n' %(ML))
         if ML=='kNN': 
-            f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, error: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('k: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, error: %f \n' %(ML_algorithm.get_params()['n_neighbors'], str(gamma_el), gamma_d, gamma_a, r, rms))
         elif ML=='KRR': 
-            f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, rho: %f, error: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('alpha: %f, gamma_el: %s, gamma_d: %f gamma_a: %f, r: %f, error: %f \n' %(ML_algorithm.get_params()['alpha'], str(gamma_el), gamma_d, gamma_a, r, rms))
         elif ML=='SVR': 
-            f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   rho: %f   error: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rho, rms))
+            f_out.write('C: %f   epsilon: %f   gamma_el: %s   gamma_d: %f   gamma_a: %f   r: %f   error: %f \n' %(ML_algorithm.get_params()['C'], ML_algorithm.get_params()['epsilon'], str(gamma_el), gamma_d, gamma_a, r, rms))
         f_out.flush()
     return rms
 #############################
@@ -1490,7 +1303,6 @@ def kernel_SVR(_x1, _x2, gamma_el, gamma_d, gamma_a):
     for k in range(len(elec_descrip)):
         elec_descrip_k = elec_descrip[k]
         if CV=='groups' or CV=='logo': elec_descrip_k = elec_descrip_k - 1
-        #print('TEST K_el, there should be only one of these')
         K_el.append(1.0)
         if gamma_el[k] != 0.0:
             # define Xi_el
@@ -1729,7 +1541,7 @@ def build_hybrid_kernel(gamma_el,gamma_d,gamma_a):
 ##### START plot_scatter ####
 #############################
 #############################
-### visualization and calculate pearsonr and spearmanr ###
+### visualization and calculate pearson r ###
 def plot_scatter(x, y, plot_type, plot_name):
     '''
     Print 2D scatter plots
@@ -1749,7 +1561,6 @@ def plot_scatter(x, y, plot_type, plot_name):
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 1)
     r,_ = pearsonr(x, y)
-    rho,_ = spearmanr(x, y)
     rmse  = math.sqrt(mean_squared_error(x,y))
     ma = np.max([x.max(), y.max()]) + 1
     mi = max(np.min([x.min(), y.min()]) - 1,0.0)
@@ -1833,7 +1644,7 @@ def squared_error(x1,x2):
 #############################
 
 if len(sys.argv)==2:
-    print('Overriging input by argument')
+    print('Overriding input by argument')
     input_file_name = sys.argv[1]
 elif  len(sys.argv)>2:
    print('ERROR: no more than one argument accepted')
@@ -1845,10 +1656,10 @@ start = time()
 (ML, Neighbors, alpha, gamma_el, gamma_d, gamma_a, C, epsilon, optimize_hyperparams, 
 alpha_lim, gamma_el_lim, gamma_d_lim, gamma_a_lim, C_lim, epsilon_lim, db_file, 
 elec_descrip, xcols, ycols, Ndata, print_log, log_name, NCPU, f_out, FP_length, 
-weight_RMSE, CV, kfold, plot_target_predictions, plot_kNN_distances, 
+weight_RMSE, CV, plot_target_predictions, plot_kNN_distances, 
 print_progress_every_x_percent, number_elec_descrip, groups_acceptor_labels, group_test, 
 acceptor_label_column, Nlast, prediction_csv_file_name, columns_labels_prediction_csv, 
-predict_unknown, diff_evol_tol,diff_evol_pop,loss_func) = read_initial_values(input_file_name)
+predict_unknown, diff_evol_tol,diff_evol_pop) = read_initial_values(input_file_name)
 ##########################################################
 ################# Execute main function ##################
 ##########################################################

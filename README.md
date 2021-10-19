@@ -34,6 +34,11 @@ python NonFullereneAcceptorPrediction.py
 
 ---
 
+## Examples
+The folders reproduce_Table1 and reproduce_Table2 contain all necessary files to reproduce the main results of the manuscript. To do this, simply execute the bash scripts: reproduce_Table1.sh and reproduce_Table2.sh inside their respective folders.
+
+---
+
 ## License
 **Authors**: [Zhi-Wen Zhao](https://github.com/amiswen), [Marcos del Cueto](https://github.com/marcosdelcueto) and Alessandro Troisi
 

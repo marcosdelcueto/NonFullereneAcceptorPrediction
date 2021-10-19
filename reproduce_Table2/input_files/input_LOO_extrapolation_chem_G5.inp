@@ -18,7 +18,7 @@ print_progress_every_x_percent =  10  # print progress in standard output at dif
 ######### Data base options ###########
 #######################################
 db_file = 'database.csv'              # name of input file with database
-Ndata =  566                          # number of d/a pairs
+Ndata =  566                           # number of d/a pairs
 xcols_struc = ["SMILES-DFP","SMILES-AFP"]                    # name of descriptors that will be affected by gamma_d and gamma_a, respectively (aka chemical descriptors)
 xcols_elec0 = ["HOMO-D","LUMO-D","LUMO-A","Reor-D","Reor-A","sum of f-D","sum of f-A","XLOGP3-D","XLOGP3-A"] # name of descriptors affected by gamma_el[0] (aka physical descriptors)
 ycols = [ "PCE" ]                     # name of target property
@@ -27,7 +27,7 @@ predict_unknown = False               # select if test configurations have unkno
 #######################################
 ####### Output prediction csv #########
 #######################################
-prediction_csv_file_name = 'pred.csv' # Select None if no output prediction csv is wanted
+prediction_csv_file_name = 'pred_G5.csv'       # Select None if no output prediction csv is wanted
 columns_labels_prediction_csv = []    # Select extra labels to print in output prediction csv
 #######################################
 # Machine Learning Algorithm options ##
@@ -35,32 +35,33 @@ columns_labels_prediction_csv = []    # Select extra labels to print in output p
 plot_target_predictions = None        # decide filename for graph plotting predicted and actual values of target property. If None, it is not plotted
 ML = 'KRR'                            # 'kNN' or 'KRR' or 'SVR'
 ### Cross validation ##################
-CV = 'logo'                           # select 'loo' (aka LOO-interpolation) OR 'groups' (aka LOO-extrapolation) OR 'logo' (aka LOGO-extrapolation)
+CV = 'groups'                          # select 'loo' (aka LOO-interpolation) OR 'groups' (aka LOO-extrapolation) OR 'logo' (aka LOGO-extrapolation)
 Nlast = 0                             # number of points at the end of database not used for standard scaler
 acceptor_label_column = "ACCEPTORNo"
 groups_acceptor_labels = [[0],[1,8,9,12,16,18,19],[23,31,32],[7,29,30],[3,4,5,6],[17,22,24,25,26,27]]
-group_test = 1                        # only used if CV='groups' or CV='logo'. Note that groups start at 0, 1, 2, 3, 4...
+group_test = 5                        # only used if CV='groups' or CV='logo'. Note that groups start at 0, 1, 2, 3, 4...
 ### Differential Evolution ############
-diff_evol_tol = 0.01                  # relative tolerance for convergence. Stop when standard deviation is smaller than (tol * mean)
-diff_evol_pop = 15                    # multiplier for total population size. Final size is parameters * diff_evol_pop
+diff_evol_tol = 0.1                  # relative tolerance for convergence. Stop when standard deviation is smaller than (tol * mean)
+diff_evol_pop = 2                    # multiplier for total population size. Final size is parameters * diff_evol_pop
 ### General hyperparameters ###########
 optimize_hyperparams = False          # whether hyperparameters are optimized (True) or just use initial values (False). If gamma_X=0.0, then that hyperparam is not optimized anyway
-gamma_el = [0.1]                      # hyperparameters with weights of d_el
-gamma_d  =  0.1                       # hyperparameter with weight of d_fp_d
-gamma_a  =  0.1                       # hyperparameter with weight of d_fp_a
+gamma_el = [0.0]                      # hyperparameters with weights of d_el
+gamma_d  = 3.632    # hyperparameter with weight of d_fp_d
+gamma_a  = 0.306       # hyperparameter with weight of d_fp_a
 gamma_el_lim = [(0.0,6.0)]            # range in which each gamma_el is optimized
 gamma_d_lim  = (0.0, 6.0)             # range in which gamma_d is optimized
 gamma_a_lim  = (0.0, 6.0)             # range in which gamma_a is optimized
 weight_RMSE = 'linear'                # select one: 'linear', 'PCE', 'PCE2'. Default: 'linear'
 ### k-Nearest Neighbors ('kNN') #######
-Neighbors = [5]                       # number of nearest-neighbors
+#Neighbors = [1,2,3,4,5,6,7,8,9,10]    # number of nearest-neighbors
+Neighbors = [3]    # number of nearest-neighbors
 plot_kNN_distances = None             # decide filename for graph of kNN-distances vs rmse at each CV step is printed. If None, it is not plotted
 ### Kernel Ridge Regression ('KRR') ###
-alpha = 0.1                           # kernel hyperparameter
+alpha = 0.347                           # kernel hyperparameter
 alpha_lim  = (0.00, 10.00)            # range in which alpha hyperparam is optimized
 ### Support Vector Regression ('SVR')##
 C = 0.1                               # regularization hyperparameter
-epsilon = 0.1                         # epsilon-SVR
+epsilon = 0.001                       # epsilon-SVR
 C_lim = (0.0,10.0)                    # range in which C is optimized
 epsilon_lim = (0.0,10.0)              # range in which epsilon is optimized
 #######################################
