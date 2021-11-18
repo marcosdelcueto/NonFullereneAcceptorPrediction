@@ -20,7 +20,7 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.neighbors import KNeighborsRegressor, DistanceMetric
+from sklearn.neighbors import KNeighborsRegressor
 #################################################################################
 ######################### START CUSTOMIZABLE PARAMETERS #########################
 input_file_name = 'inputNonFullereneAcceptorPrediction.inp'  # name of input file
@@ -60,7 +60,7 @@ def main():
     if optimize_hyperparams==True:
         fixed_hyperparams = []
         condition=None
-        ########## Use just structural descriptors ##########
+        ########## Use just structural descriptors (fp) ##########
         for i in range(len(elec_descrip)):
             if gamma_el[i]==0.0:
                 condition = 'structure'
@@ -120,7 +120,7 @@ def main():
             # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
             fixed_hyperparams.append(False)
             mini_args = (X, y, condition,fixed_hyperparams)
-            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=False,workers=NCPU,updating='deferred',seed=0)
+            solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_tol,polish=False,workers=NCPU,updating='deferred')
             # print best hyperparams
             best_hyperparams = solver.x
             best_rmse = solver.fun
@@ -172,7 +172,7 @@ def main():
                     # Add final_call=False to fixed_hyperparameters to indicate that validaton is coming (only relevant for CV='groups')
                     fixed_hyperparams.append(False)
                     mini_args = (X, y, condition,fixed_hyperparams)
-                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=False,workers=NCPU,updating='deferred',seed=0)
+                    solver = differential_evolution(func_ML,bounds,args=mini_args,popsize=diff_evol_pop,tol=diff_evol_pop,polish=False,workers=NCPU,updating='deferred')
                     # print best hyperparams
                     best_hyperparams = solver.x
                     best_rmse = solver.fun
@@ -306,7 +306,6 @@ def read_initial_values(inp):
     db_file = ast.literal_eval(var_value[var_name.index('db_file')])            # name of input file with database
     acceptor_label_column = ast.literal_eval(var_value[var_name.index('acceptor_label_column')])
     CV = ast.literal_eval(var_value[var_name.index('CV')])
-    #elec_descrip = ast.literal_eval(var_value[var_name.index('elec_descrip')]) # number of electronic descriptors: they must match the number in 'xcols', and be followed by the two structural descriptors
     xcols = []
     elec_descrip = []
     xcols.append(ast.literal_eval(var_value[var_name.index('xcols_struc')]))  # specify which descriptors are used
@@ -335,7 +334,6 @@ def read_initial_values(inp):
     prediction_csv_file_name = ast.literal_eval(var_value[var_name.index('prediction_csv_file_name')])
     columns_labels_prediction_csv = ast.literal_eval(var_value[var_name.index('columns_labels_prediction_csv')])
     predict_unknown = ast.literal_eval(var_value[var_name.index('predict_unknown')])
-    #logo_error_type = ast.literal_eval(var_value[var_name.index('logo_error_type')])
     diff_evol_tol = ast.literal_eval(var_value[var_name.index('diff_evol_tol')])
     diff_evol_pop = ast.literal_eval(var_value[var_name.index('diff_evol_pop')])
 
@@ -389,7 +387,6 @@ def read_initial_values(inp):
         print('acceptor_label_column =', acceptor_label_column)
         print('groups_acceptor_labels =', groups_acceptor_labels)
         print('group_test =', group_test)
-        #print('logo_error_type =', logo_error_type)
     if optimize_hyperparams == True:
         print('### Differential Evolution ##########')
         print('diff_evol_tol = ', diff_evol_tol)
@@ -458,7 +455,6 @@ def read_initial_values(inp):
             f_out.write('acceptor_label_column %s\n' % str(acceptor_label_column))
             f_out.write('groups_acceptor_labels %s\n' % str(groups_acceptor_labels))
             f_out.write('group_test %s\n' % str(group_test))
-            #f_out.write('logo_error_type %s\n' % str(logo_error_type))
         if optimize_hyperparams == True:
             f_out.write('### Differential Evolution ##########')
             f_out.write('diff_evol_tol %s\n' % str(diff_evol_tol))
